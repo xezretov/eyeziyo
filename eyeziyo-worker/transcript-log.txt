@@ -1,0 +1,114 @@
+════════════════════════════════════════════
+ Audio: C:/Users/dilsh/Downloads/audio.wav
+ Size : 21.53 MB
+ Dur  : 705.6 s  ( 11.76 min)
+ Fmt  : 8000 Hz, 1 ch, 32 bit, format = 1
+ Mode : chunked
+ Course: Tarix | Topic: Ahmad Temuriy va Temuriylar davri
+════════════════════════════════════════════
+
+Chunks: 62 of 62 (12s each, 0.5s overlap)
+
+[ 1/62] 0.0s–12.0s ... 2.5-flash-lite 12150ms +147ch
+     "Assalomu alaykum aziz o'quvchilar bugungi mavzuyimiz beshinchi Ahmad Temuriy Temuriylar davri tarixiga oid birinchi o'quvchi 14-asrning o'rtalarida"
+[ 2/62] 11.5s–23.5s ... 2.5-flash-lite 11408ms +125ch
+     "o'rtalarida Movarounnahrda siyosiy vaziyat murakkablashdi. Agar shuncha siyosiy ta'qiblar, ijtimoiy kurash maydoni, mamlakat mustaqilligi"
+[ 3/62] 23.0s–35.0s ... 2.5-flash-lite 7569ms +248ch
+     "va mustaqilligi uchun kurash olib borgan davlatlarimizning siyosiy va ijtimoiy hayoti hamda madaniyatini o'rganishimiz kerak. Bu davrda Movarounnahrda siyosiy vaziyat murakkablashd..."
+[ 4/62] 34.5s–46.5s ... 2.5-flash-lite 4044ms +223ch
+     "shuncha siyosiy ta'qiblar ijtimoiy kurash maydoni mamlakat hududiy bo'linishlarga bo'linishiga olib keldi. Bu yerdagi hokimlar o'zlarini hokim deb e'lon qildilar. Hamaladagi kamtar..."
+[ 5/62] 46.0s–58.0s ... 2.5-flash-lite 16444ms +228ch
+     "va o'zini o'zi boshqarishga ajraladi. Shuning uchun ham bu davrda ijtimoiy kurash maydoni mamlakat hududiy bo'linishlarga bo'linishiga olib keldi. Bu yerdagi hokimlar o'zlarini hok..."
+[ 6/62] 57.5s–69.5s ... 2.5-flash-lite 15763ms +185ch
+     "o'zini hokim deb e'lon qildi. Hamaladagi kamtar bo'lib, o'zini hokim deb e'lon qildi. Xorazm, Buxoro, Samarqand viloyatlari o'ziston xonlari bir necha bor mol-mulkiga yetishib kelishdi."
+[ 7/62] 69.0s–81.0s ... 2.5-flash-lite 7839ms +115ch
+     "Mustafolarning bayramgarlikga olib keluvchi yuksaklari. Biz hozir biz va zulmga qarshi xalq harakatlari boshlanadi."
+[ 8/62] 80.5s–92.5s ... 2.5-flash-lite 5083ms +755ch
+     "va shu tariqa o'zbek xonlari bir necha bor mol-mulkiga yetishib kelishdi. Mustafolarning bayramgarlikga olib keluvchi yuksaklari. Biz hozir biz va zulmga qarshi xalq harakatlari bo..."
+[ 9/62] 92.0s–104.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  [gemini-2.0-flash] 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2.5-flash 10350ms +56ch
+     "Amir Temur yoshlik davri. Amir Temur Kesh viloyatida Xo'"
+[10/62] 103.5s–115.5s ... 2.5-flash-lite 11845ms +1675ch
+     "viloyatida tug'ilgan. Uning otasi Muhammad Tarag'ay bo'lib, u ham o'z davrida ilm-fan, xususan, astronomiya sohasida katta shuhrat qozongan. Amir Temurning onasi esa To'g'ay Buxori..."
+[11/62] 115.0s–127.0s ... 2.5-flash-lite 9372ms +1653ch
+     "madaniyatining rivojlanishiga katta hissa qo'shgan. Uning o'zi ham ilm-fan, adabiyot, san'atga katta e'tibor bergan. Temuriyzodalar orasida ham ko'plab shoirlar, olimlar, tarixchil..."
+[12/62] 126.5s–138.5s ... 2.5-flash-lite 9629ms +1107ch
+     "arining dunyo sivilizatsiyasiga qo'shgan hissasini ko'rsatadi. Bu davrda ilm-fan, madaniyat, san'at, me'morchilik, adabiyot va falsafa o'zining yuksak cho'qqisiga erishdi. Ayniqsa,..."
+[13/62] 138.0s–150.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  [gemini-2.0-flash] 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2.5-flash 11339ms +66ch
+     "faqat kichik bir omila yordamida qotirishlar ali sal bo'lgan ekan."
+[14/62] 149.5s–161.5s ... 2.5-flash-lite 10922ms +1747ch
+     "va o'zbek xalqining boy madaniy merosini tashkil etadi. faqat kichik bir omila yordamida qotirishlar ali sal bo'lgan ekan. Xo'sh, endi bizning o'zbek davlatchiligi tarixida eng buy..."
+[15/62] 161.0s–173.0s ... 2.5-flash-lite 12617ms +326ch
+     "kori, o'zining insonparvarligi bilan dunyoga tanilgan. Amir Temur o'zining buyukligi, o'zining ulug'vorligi bilan dunyoga tanilgan. Amir Temur o'zining jasorati, o'zining aql-idrok..."
+[16/62] 172.5s–184.5s ... 2.5-flash-lite 27050ms +180ch
+     "o'zbekiston hududida o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[17/62] 184.0s–196.0s ... 2.5-flash-lite 16101ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[18/62] 195.5s–207.5s ... 2.5-flash-lite 11570ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[19/62] 207.0s–219.0s ... 2.5-flash-lite 16732ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[20/62] 218.5s–230.5s ... 2.5-flash-lite 29748ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[21/62] 230.0s–242.0s ... 2.5-flash-lite 4632ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[22/62] 241.5s–253.5s ... 2.5-flash-lite 20493ms +159ch
+     "o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati, harbiy yurishlari, ilm-fan va madaniyatga bo'lgan e'tibori, ayniqsa,"
+[23/62] 253.0s–265.0s ... 2.5-flash-lite 19414ms +155ch
+     "madaniyatga bo'lgan e'tibori ayniqsa o'ziga xos davlat tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati harbiy yurishlari ilm fan va"
+[24/62] 264.5s–276.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  [gemini-2.0-flash] 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2.5-flash 8524ms +54ch
+     "madaniyatga bo'lgan e'tibori ayniqsa o'ziga xos davlat"
+[25/62] 276.0s–288.0s ... 2.5-flash-lite 16207ms +155ch
+     "tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati harbiy yurishlari ilm fan va madaniyatga bo'lgan e'tibori ayniqsa o'ziga xos davlat"
+[26/62] 287.5s–299.5s ... 2.5-flash-lite 6996ms +155ch
+     "tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati harbiy yurishlari ilm fan va madaniyatga bo'lgan e'tibori ayniqsa o'ziga xos davlat"
+[27/62] 299.0s–311.0s ... 2.5-flash-lite 5177ms +155ch
+     "tuzilmalarini yaratishga erishgan. Uning davlat boshqaruvidagi siyosati harbiy yurishlari ilm fan va madaniyatga bo'lgan e'tibori ayniqsa o'ziga xos davlat"
+[28/62] 310.5s–322.5s ... 

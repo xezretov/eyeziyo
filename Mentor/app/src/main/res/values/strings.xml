@@ -1,0 +1,168 @@
+<resources>
+    <string name="app_name">Mentor</string>
+    <string name="default_notification_channel_id">mentor_default</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Bosh sahifa</string>
+    <string name="tab_lessons">Darslar</string>
+    <string name="tab_practice">Mashq</string>
+    <string name="tab_stats">Statistika</string>
+    <string name="tab_profile">Profil</string>
+
+    <!-- Login -->
+    <string name="login_title">Mentor</string>
+    <string name="login_subtitle">AI yordamida darsingizni chuqurroq o\'zlashtiring</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Parol</string>
+    <string name="login_button">Kirish</string>
+    <string name="login_forgot">Parolni unutdingizmi?</string>
+    <string name="login_hint">Login va parolingizni o\'qituvchingiz beradi</string>
+    <string name="login_only_students">Bu ilova faqat o\'quvchilar uchun</string>
+    <string name="login_biometric_prompt">Mentor\'ga kirish</string>
+    <string name="login_biometric_subtitle">Barmoq izi yoki yuz orqali tasdiqlang</string>
+    <string name="login_biometric_negative">Parol bilan kirish</string>
+    <string name="login_biometric_offer">Keyingi safar barmoq izi bilan kirasizmi?</string>
+
+    <!-- Home / Welcome -->
+    <string name="home_greeting">Assalomu alaykum, %1$s</string>
+    <string name="home_greeting_default">o\'quvchi</string>
+    <string name="home_what_today">Bugun nimadan boshlaymiz?</string>
+    <string name="home_pending">Topshirilmagan darslar</string>
+    <string name="home_pending_count">%1$d ta</string>
+    <string name="home_streak_today">🔥 %1$d kun ketma-ket</string>
+    <string name="home_streak_start">Streakni boshlang!</string>
+    <string name="home_streak_freeze_used">Bugun freeze ishlatildi</string>
+    <string name="home_continue">Davom ettirish:</string>
+    <string name="home_no_lessons">Hozircha darslar yo\'q. O\'qituvchingiz dars o\'tgandan so\'ng shu yerda paydo bo\'ladi.</string>
+    <string name="home_all_done">Barcha topshiriqlarni bajargansiz! ✨</string>
+    <string name="home_daily_practice">Bugungi mashq</string>
+    <string name="home_daily_practice_sub">5 ta savol — 3 daqiqa</string>
+    <string name="home_review_terms">Takrorlash kerak: %1$d ta termin</string>
+
+    <!-- Lessons -->
+    <string name="lessons_title">Darslar</string>
+    <string name="lessons_search">Mavzu yoki guruh bo\'yicha qidirish</string>
+    <string name="lessons_filter_all">Hammasi</string>
+    <string name="lessons_filter_pending">Topshirilmagan</string>
+    <string name="lessons_filter_done">Bajarilgan</string>
+    <string name="lessons_empty">Darslar yo\'q</string>
+    <string name="lessons_refresh">Yangilash</string>
+
+    <!-- Lesson detail -->
+    <string name="lesson_topic_default">Dars</string>
+    <string name="lesson_duration">Davomiyligi: %1$d daq %2$d soniya</string>
+    <string name="lesson_attempt_done">Test bajarilgan</string>
+    <string name="lesson_attempt_score">Ball: %1$d%%</string>
+    <string name="lesson_action_test">Testni bajarish</string>
+    <string name="lesson_action_test_again">Testni qayta ko\'rish</string>
+    <string name="lesson_action_test_sub">10 ta savol darsga asoslangan</string>
+    <string name="lesson_action_terms">Muhim terminlar</string>
+    <string name="lesson_action_terms_sub">AI tushuntirgan asosiy so\'zlar</string>
+    <string name="lesson_action_chat">Mentor bilan suhbat</string>
+    <string name="lesson_action_chat_sub">Savolingizni yozing, AI javob beradi</string>
+    <string name="lesson_action_flashcards">Flashcards</string>
+    <string name="lesson_action_flashcards_sub">Spaced repetition bilan terminlarni mustahkamlang</string>
+    <string name="lesson_goals_title">Bu darsda nima o\'rganaman?</string>
+    <string name="lesson_goals_add">Maqsad qo\'shish</string>
+
+    <!-- Test -->
+    <string name="test_title">Test</string>
+    <string name="test_progress">%1$d / %2$d ta javob</string>
+    <string name="test_submit">Javoblarni yuborish</string>
+    <string name="test_preparing">Test tayyorlanmoqda…</string>
+    <string name="test_no_questions">Bu dars uchun test yaratilmagan. O\'qituvchingiz yoki Eyeziyo bilan bog\'laning.</string>
+    <string name="test_score_label">%1$d / %2$d to\'g\'ri</string>
+    <string name="test_correct_answer">To\'g\'ri javob: %1$s) %2$s</string>
+    <string name="test_view_terms">Terminlarni ko\'rish</string>
+    <string name="test_celebrate_great">Zo\'r natija!</string>
+    <string name="test_celebrate_good">Yaxshi, davom eting!</string>
+    <string name="test_celebrate_try">Yana urinib ko\'ring</string>
+    <string name="test_review_again">Qayta ishlash</string>
+
+    <!-- Terms / Flashcards -->
+    <string name="terms_title">Muhim terminlar</string>
+    <string name="terms_loading">Terminlar yuklanmoqda…</string>
+    <string name="terms_empty">Bu dars uchun terminlar topilmadi.</string>
+    <string name="terms_ask_question">Savol bering</string>
+    <string name="flashcards_title">Flashcards</string>
+    <string name="flashcards_show_answer">Javobni ko\'rsat</string>
+    <string name="flashcards_again">Qaytadan</string>
+    <string name="flashcards_hard">Qiyin</string>
+    <string name="flashcards_good">Yaxshi</string>
+    <string name="flashcards_easy">Oson</string>
+    <string name="flashcards_done">Bugungi takror tugadi 🎉</string>
+    <string name="flashcards_done_sub">%1$d ta termin ko\'rib chiqildi</string>
+    <string name="flashcards_due_count">Bugun ko\'rib chiqish: %1$d</string>
+    <string name="flashcards_empty">Hozircha kartochkalar yo\'q. Avval darsdagi terminlarni ko\'ring.</string>
+
+    <!-- Chat -->
+    <string name="chat_title">Mentor bilan suhbat</string>
+    <string name="chat_input_placeholder">Savolingizni yozing…</string>
+    <string name="chat_send">Yuborish</string>
+    <string name="chat_voice">Ovozli savol</string>
+    <string name="chat_attach">Rasm yuborish</string>
+    <string name="chat_empty_title">Eyeziyo Mentor tayyor</string>
+    <string name="chat_empty_sub">Darsdagi biror mavzu haqida savol bering — AI darsga asoslanib javob beradi</string>
+    <string name="chat_quick_explain">Mavzuni qisqacha tushuntir</string>
+    <string name="chat_quick_example">Misol keltir</string>
+    <string name="chat_quick_quiz">Menga 3 ta savol ber</string>
+    <string name="chat_copy">Nusxalash</string>
+    <string name="chat_copied">Nusxalandi</string>
+    <string name="chat_scroll_bottom">Pastga</string>
+    <string name="chat_voice_listening">Tinglanmoqda…</string>
+    <string name="chat_voice_unavailable">Ovoz tanish mavjud emas</string>
+
+    <!-- Stats -->
+    <string name="stats_title">Statistika</string>
+    <string name="stats_avg">O\'rtacha ball</string>
+    <string name="stats_lessons_done">Bajarilgan darslar</string>
+    <string name="stats_streak">Joriy streak</string>
+    <string name="stats_best_subject">Eng kuchli</string>
+    <string name="stats_weak_subject">Kuchaytirish kerak</string>
+    <string name="stats_week_trend">Haftalik trend</string>
+    <string name="stats_subject_breakdown">Predmetlar bo\'yicha</string>
+    <string name="stats_no_data">Hali statistika yo\'q. Bir nechta dars bajaring.</string>
+
+    <!-- Profile / Settings -->
+    <string name="profile_title">Profil</string>
+    <string name="profile_groups">Guruhlar</string>
+    <string name="profile_achievements">Yutuqlar</string>
+    <string name="profile_settings">Sozlamalar</string>
+    <string name="profile_logout">Chiqish</string>
+    <string name="settings_title">Sozlamalar</string>
+    <string name="settings_language">Til</string>
+    <string name="settings_theme">Mavzu</string>
+    <string name="settings_theme_system">Tizim</string>
+    <string name="settings_theme_light">Yorug\'</string>
+    <string name="settings_theme_dark">Tungi</string>
+    <string name="settings_notifications">Bildirishnomalar</string>
+    <string name="settings_notif_streak">Streak eslatmasi</string>
+    <string name="settings_notif_review">Takrorlash eslatmasi</string>
+    <string name="settings_biometric">Barmoq izi</string>
+    <string name="settings_about">Ilova haqida</string>
+    <string name="settings_version">Versiya: %1$s</string>
+
+    <!-- Achievements -->
+    <string name="ach_title">Yutuqlar</string>
+    <string name="ach_locked">Yopiq</string>
+    <string name="ach_unlocked">Olindi</string>
+    <string name="ach_progress">%1$d / %2$d</string>
+
+    <!-- Daily practice -->
+    <string name="daily_title">Bugungi mashq</string>
+    <string name="daily_intro">5 ta savol — kuchsiz mavzulardan tanlangan</string>
+    <string name="daily_empty">Mashq uchun yetarli savol yo\'q. Avval bir nechta dars bajaring.</string>
+
+    <!-- Common -->
+    <string name="common_back">Orqaga</string>
+    <string name="common_retry">Qayta urinish</string>
+    <string name="common_loading">Yuklanmoqda…</string>
+    <string name="common_error">Xatolik yuz berdi</string>
+    <string name="common_offline">Internet yo\'q. Saqlangan ma\'lumot ko\'rsatilmoqda.</string>
+    <string name="common_save">Saqlash</string>
+    <string name="common_cancel">Bekor qilish</string>
+    <string name="common_continue">Davom etish</string>
+    <string name="common_done">Tayyor</string>
+    <string name="common_yes">Ha</string>
+    <string name="common_no">Yo\'q</string>
+</resources>

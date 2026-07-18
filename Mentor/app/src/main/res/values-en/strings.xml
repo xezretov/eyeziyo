@@ -1,0 +1,154 @@
+<resources>
+    <string name="app_name">Mentor</string>
+
+    <string name="tab_home">Home</string>
+    <string name="tab_lessons">Lessons</string>
+    <string name="tab_practice">Practice</string>
+    <string name="tab_stats">Stats</string>
+    <string name="tab_profile">Profile</string>
+
+    <string name="login_title">Mentor</string>
+    <string name="login_subtitle">Master your lesson with AI</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_button">Sign in</string>
+    <string name="login_forgot">Forgot password?</string>
+    <string name="login_hint">Your teacher will provide your credentials</string>
+    <string name="login_only_students">This app is for students only</string>
+    <string name="login_biometric_prompt">Unlock Mentor</string>
+    <string name="login_biometric_subtitle">Confirm with fingerprint or face</string>
+    <string name="login_biometric_negative">Use password</string>
+    <string name="login_biometric_offer">Use biometrics next time?</string>
+
+    <string name="home_greeting">Hi, %1$s</string>
+    <string name="home_greeting_default">student</string>
+    <string name="home_what_today">What shall we start with?</string>
+    <string name="home_pending">Pending lessons</string>
+    <string name="home_pending_count">%1$d</string>
+    <string name="home_streak_today">🔥 %1$d day streak</string>
+    <string name="home_streak_start">Start your streak!</string>
+    <string name="home_streak_freeze_used">Freeze used today</string>
+    <string name="home_continue">Continue:</string>
+    <string name="home_no_lessons">No lessons yet. They\'ll appear after your teacher\'s class.</string>
+    <string name="home_all_done">All caught up! ✨</string>
+    <string name="home_daily_practice">Today\'s practice</string>
+    <string name="home_daily_practice_sub">5 questions — 3 minutes</string>
+    <string name="home_review_terms">Due for review: %1$d terms</string>
+
+    <string name="lessons_title">Lessons</string>
+    <string name="lessons_search">Search by topic or group</string>
+    <string name="lessons_filter_all">All</string>
+    <string name="lessons_filter_pending">Pending</string>
+    <string name="lessons_filter_done">Done</string>
+    <string name="lessons_empty">No lessons</string>
+    <string name="lessons_refresh">Refresh</string>
+
+    <string name="lesson_topic_default">Lesson</string>
+    <string name="lesson_duration">Duration: %1$d min %2$d sec</string>
+    <string name="lesson_attempt_done">Test completed</string>
+    <string name="lesson_attempt_score">Score: %1$d%%</string>
+    <string name="lesson_action_test">Take test</string>
+    <string name="lesson_action_test_again">Review test</string>
+    <string name="lesson_action_test_sub">10 questions from the lesson</string>
+    <string name="lesson_action_terms">Key terms</string>
+    <string name="lesson_action_terms_sub">AI-explained essentials</string>
+    <string name="lesson_action_chat">Chat with mentor</string>
+    <string name="lesson_action_chat_sub">Ask anything — AI answers from the lesson</string>
+    <string name="lesson_action_flashcards">Flashcards</string>
+    <string name="lesson_action_flashcards_sub">Lock in terms with spaced repetition</string>
+    <string name="lesson_goals_title">My goals for this lesson</string>
+    <string name="lesson_goals_add">Add goal</string>
+
+    <string name="test_title">Test</string>
+    <string name="test_progress">%1$d / %2$d answered</string>
+    <string name="test_submit">Submit answers</string>
+    <string name="test_preparing">Preparing test…</string>
+    <string name="test_no_questions">No test was generated for this lesson. Contact your teacher.</string>
+    <string name="test_score_label">%1$d / %2$d correct</string>
+    <string name="test_correct_answer">Correct answer: %1$s) %2$s</string>
+    <string name="test_view_terms">View terms</string>
+    <string name="test_celebrate_great">Excellent!</string>
+    <string name="test_celebrate_good">Nice, keep going!</string>
+    <string name="test_celebrate_try">Give it another go</string>
+    <string name="test_review_again">Retake</string>
+
+    <string name="terms_title">Key terms</string>
+    <string name="terms_loading">Loading terms…</string>
+    <string name="terms_empty">No terms for this lesson.</string>
+    <string name="terms_ask_question">Ask a question</string>
+    <string name="flashcards_title">Flashcards</string>
+    <string name="flashcards_show_answer">Show answer</string>
+    <string name="flashcards_again">Again</string>
+    <string name="flashcards_hard">Hard</string>
+    <string name="flashcards_good">Good</string>
+    <string name="flashcards_easy">Easy</string>
+    <string name="flashcards_done">Today\'s review done 🎉</string>
+    <string name="flashcards_done_sub">%1$d terms reviewed</string>
+    <string name="flashcards_due_count">Due today: %1$d</string>
+    <string name="flashcards_empty">No cards yet. Open lesson terms first.</string>
+
+    <string name="chat_title">Chat with mentor</string>
+    <string name="chat_input_placeholder">Type your question…</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_voice">Voice question</string>
+    <string name="chat_attach">Attach photo</string>
+    <string name="chat_empty_title">Eyeziyo Mentor is ready</string>
+    <string name="chat_empty_sub">Ask about anything from the lesson — AI answers from the material</string>
+    <string name="chat_quick_explain">Explain the topic briefly</string>
+    <string name="chat_quick_example">Give an example</string>
+    <string name="chat_quick_quiz">Quiz me with 3 questions</string>
+    <string name="chat_copy">Copy</string>
+    <string name="chat_copied">Copied</string>
+    <string name="chat_scroll_bottom">Bottom</string>
+    <string name="chat_voice_listening">Listening…</string>
+    <string name="chat_voice_unavailable">Voice recognition unavailable</string>
+
+    <string name="stats_title">Stats</string>
+    <string name="stats_avg">Average score</string>
+    <string name="stats_lessons_done">Lessons done</string>
+    <string name="stats_streak">Current streak</string>
+    <string name="stats_best_subject">Strongest</string>
+    <string name="stats_weak_subject">Needs work</string>
+    <string name="stats_week_trend">Weekly trend</string>
+    <string name="stats_subject_breakdown">By subject</string>
+    <string name="stats_no_data">No stats yet. Take a few lessons.</string>
+
+    <string name="profile_title">Profile</string>
+    <string name="profile_groups">Groups</string>
+    <string name="profile_achievements">Achievements</string>
+    <string name="profile_settings">Settings</string>
+    <string name="profile_logout">Sign out</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notif_streak">Streak reminder</string>
+    <string name="settings_notif_review">Review reminder</string>
+    <string name="settings_biometric">Biometrics</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version: %1$s</string>
+
+    <string name="ach_title">Achievements</string>
+    <string name="ach_locked">Locked</string>
+    <string name="ach_unlocked">Unlocked</string>
+    <string name="ach_progress">%1$d / %2$d</string>
+
+    <string name="daily_title">Today\'s practice</string>
+    <string name="daily_intro">5 questions — picked from your weakest topics</string>
+    <string name="daily_empty">Not enough questions yet. Take a few lessons first.</string>
+
+    <string name="common_back">Back</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_error">Something went wrong</string>
+    <string name="common_offline">Offline. Showing cached data.</string>
+    <string name="common_save">Save</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_continue">Continue</string>
+    <string name="common_done">Done</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+</resources>

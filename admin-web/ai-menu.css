@@ -1,0 +1,705 @@
+/* ═══════════════════════════════════════════════════════
+   Eyeziyo AI — futuristik ovozli tahlilchi sahifasi
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #04060f;
+  --bg-2: #080c1c;
+  --cyan: #22d3ee;
+  --violet: #a78bfa;
+  --magenta: #e879f9;
+  --text: #e6edf7;
+  --text-dim: #8b96ad;
+  --glass: rgba(13, 20, 40, 0.55);
+  --glass-border: rgba(120, 160, 255, 0.14);
+  --glow-cyan: rgba(34, 211, 238, 0.35);
+  --glow-violet: rgba(167, 139, 250, 0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: radial-gradient(1200px 800px at 70% -10%, #0d1230 0%, var(--bg) 55%),
+              var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══ Boot sekvensiyasi ═══ */
+#boot {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 34px;
+  transition: opacity .6s, visibility .6s;
+}
+#boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.boot-core {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, transparent 25%),
+              radial-gradient(circle, #67e8f9 0%, #6366f1 55%, transparent 75%);
+  box-shadow: 0 0 40px var(--glow-cyan), 0 0 100px var(--glow-violet);
+  animation: bootPulse 1s ease-in-out infinite;
+  position: relative;
+}
+.boot-core::before, .boot-core::after {
+  content: ""; position: absolute; inset: -14px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-top-color: var(--cyan);
+  animation: spin 1.1s linear infinite;
+}
+.boot-core::after {
+  inset: -26px;
+  border-top-color: transparent;
+  border-bottom-color: var(--violet);
+  animation-duration: 1.7s; animation-direction: reverse;
+}
+@keyframes bootPulse { 50% { transform: scale(1.12); filter: brightness(1.3); } }
+.boot-lines {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px; letter-spacing: 1px;
+  color: var(--cyan);
+  min-height: 90px; width: 320px;
+  text-shadow: 0 0 8px var(--glow-cyan);
+}
+.boot-lines div { opacity: 0; animation: bootLine .3s forwards; }
+.boot-lines div span { color: var(--text-dim); }
+.boot-lines div b { color: #4ade80; font-weight: 600; }
+@keyframes bootLine { to { opacity: 1; } }
+
+/* ═══ Fon qatlamlari ═══ */
+#bgCanvas { position: fixed; inset: 0; z-index: 0; }
+.grid-overlay {
+  position: fixed; inset: -60px; z-index: 1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(90, 130, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 130, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, black 30%, transparent 75%);
+  transition: transform .2s ease-out;
+  animation: gridDrift 26s linear infinite;
+}
+@keyframes gridDrift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 48px, 48px 0; }
+}
+.vignette {
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+}
+/* Yuqoridan pastga suzuvchi nozik skaner chizig'i */
+.scanline {
+  position: fixed; left: 0; right: 0; top: -6px; height: 6px;
+  z-index: 3; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(34,211,238,0.06) 40%, rgba(34,211,238,0.14) 50%, rgba(34,211,238,0.06) 60%, transparent);
+  animation: scan 9s linear infinite;
+  opacity: .8;
+}
+@keyframes scan {
+  0% { transform: translateY(-10px); }
+  70% { transform: translateY(100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ═══ HUD burchaklar + telemetriya ═══ */
+.hud {
+  position: fixed; width: 26px; height: 26px; z-index: 4;
+  border: 1px solid rgba(34,211,238,0.35);
+  pointer-events: none;
+  animation: hudGlow 4s ease-in-out infinite;
+}
+.hud-tl { top: 70px; left: 14px; border-right: none; border-bottom: none; }
+.hud-tr { top: 70px; right: 14px; border-left: none; border-bottom: none; }
+.hud-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; }
+.hud-br { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+@keyframes hudGlow {
+  50% { border-color: rgba(167,139,250,0.5); box-shadow: 0 0 12px rgba(34,211,238,0.12); }
+}
+.hud-tele {
+  position: fixed; bottom: 20px; z-index: 4;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9.5px; letter-spacing: 2px;
+  color: rgba(139, 150, 173, 0.65);
+  pointer-events: none;
+  text-transform: uppercase;
+}
+.tele-left { left: 50px; }
+.tele-right { right: 50px; }
+.hud-tele b { color: rgba(34,211,238,0.8); font-weight: 400; }
+
+/* ═══ Topbar ═══ */
+.topbar {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--glass-border);
+  background: linear-gradient(180deg, rgba(8, 12, 28, 0.7), rgba(8, 12, 28, 0.35));
+}
+/* Pastki chegarada oqib yuruvchi neon nur */
+.topbar::after {
+  content: ""; position: absolute; left: 0; bottom: -1px;
+  width: 220px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: borderFlow 5s ease-in-out infinite;
+  opacity: .7;
+}
+@keyframes borderFlow {
+  0%, 100% { transform: translateX(-120px); opacity: 0; }
+  15%, 85% { opacity: .8; }
+  50% { transform: translateX(calc(100vw - 100px)); }
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text-dim); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  padding: 7px 14px; border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all .25s;
+}
+.back-link:hover { color: var(--cyan); border-color: var(--glass-border); background: rgba(34,211,238,0.06); }
+.back-arrow { font-size: 15px; }
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: "Orbitron", sans-serif;
+  letter-spacing: 3px; font-size: 16px; font-weight: 500;
+  user-select: none;
+}
+.brand b {
+  font-weight: 900;
+  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta), var(--cyan));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hueFlow 6s linear infinite;
+}
+@keyframes hueFlow { to { background-position: 300% 0; } }
+/* Ahyon-ahyonda RGB glitch */
+.glitch { position: relative; }
+.glitch::before {
+  content: attr(data-text);
+  position: absolute; left: 0; top: 0;
+  width: 100%; overflow: hidden;
+  color: var(--cyan);
+  opacity: 0;
+  animation: glitchPop 7s infinite;
+  pointer-events: none;
+}
+@keyframes glitchPop {
+  0%, 96.5%, 100% { opacity: 0; transform: none; clip-path: inset(0 0 0 0); }
+  97% { opacity: .8; transform: translate(-2px, 1px); clip-path: inset(10% 0 55% 0); }
+  97.5% { opacity: .8; transform: translate(2px, -1px); clip-path: inset(60% 0 15% 0); color: var(--magenta); }
+  98% { opacity: 0; }
+}
+.brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--glow-cyan);
+  animation: dotPulse 2.4s ease-in-out infinite;
+}
+@keyframes dotPulse { 50% { opacity: .4; transform: scale(.8); } }
+.brand-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--violet);
+  border: 1px solid rgba(167,139,250,0.4);
+  border-radius: 5px; padding: 2px 6px;
+}
+
+/* Ovoz toggle */
+.voice-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.voice-toggle input { display: none; }
+.vt-track {
+  width: 38px; height: 20px; border-radius: 20px;
+  background: rgba(120,160,255,0.12);
+  border: 1px solid var(--glass-border);
+  position: relative; transition: all .25s;
+}
+.vt-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--text-dim); transition: all .25s;
+}
+.voice-toggle input:checked + .vt-track { background: rgba(34,211,238,0.18); border-color: rgba(34,211,238,0.5); }
+.voice-toggle input:checked + .vt-track .vt-thumb {
+  left: 20px; background: var(--cyan);
+  box-shadow: 0 0 10px var(--glow-cyan);
+}
+.vt-label { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+
+/* ═══ Sahna ═══ */
+.stage {
+  position: relative; z-index: 5;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center;
+  max-width: 860px; width: 100%;
+  margin: 0 auto; padding: 0 18px;
+  min-height: 0;
+}
+
+/* ═══ AI Orb ═══ */
+.orb-wrap {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 26px 0 10px;
+  flex-shrink: 0;
+  transition: all .5s cubic-bezier(.4,0,.2,1);
+}
+.orb {
+  position: relative;
+  width: 110px; height: 110px;
+  transition: transform .08s linear;
+}
+.orb-core {
+  position: absolute; inset: 0; border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7) 0%, transparent 22%),
+    radial-gradient(circle at 50% 50%, rgba(103,232,249,0.9) 0%, #6366f1 48%, #1e1b4b 100%);
+  box-shadow:
+    0 0 30px var(--glow-cyan),
+    0 0 80px var(--glow-violet),
+    inset 0 0 30px rgba(255,255,255,0.15);
+  animation: orbBreath 4s ease-in-out infinite;
+}
+/* Ichki plazma pufakchalari — aylanib turadigan rangli tumanlik */
+.orb-plasma {
+  position: absolute; border-radius: 50%;
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 1;
+}
+.p1 {
+  inset: 12px;
+  background: radial-gradient(circle at 30% 65%, rgba(232,121,249,0.85) 0%, transparent 45%);
+  animation: plasmaSpin 5s linear infinite;
+}
+.p2 {
+  inset: 16px;
+  background: radial-gradient(circle at 70% 30%, rgba(34,211,238,0.9) 0%, transparent 48%);
+  animation: plasmaSpin 7.5s linear infinite reverse;
+}
+@keyframes plasmaSpin { to { transform: rotate(360deg); } }
+.orb-shine {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.75) 0%, transparent 20%);
+  pointer-events: none;
+}
+.orb-glow {
+  position: absolute; inset: -18px; border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-cyan) 0%, transparent 65%);
+  filter: blur(6px);
+  animation: orbBreath 4s ease-in-out infinite reverse;
+}
+@keyframes orbBreath { 50% { transform: scale(1.05); filter: brightness(1.15); } }
+
+/* Halqalar — orb ichida, har doim markazda */
+.orb-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid transparent;
+  top: 50%; left: 50%;
+  pointer-events: none;
+}
+.ring-1 {
+  width: 150px; height: 150px; margin: -75px 0 0 -75px;
+  border-top-color: rgba(34,211,238,0.55);
+  border-right-color: rgba(34,211,238,0.12);
+  animation: spin 6s linear infinite;
+}
+.ring-2 {
+  width: 180px; height: 180px; margin: -90px 0 0 -90px;
+  border-bottom-color: rgba(167,139,250,0.45);
+  border-left-color: rgba(167,139,250,0.1);
+  animation: spin 10s linear infinite reverse;
+}
+.ring-3 {
+  width: 214px; height: 214px; margin: -107px 0 0 -107px;
+  border-top-color: rgba(232,121,249,0.25);
+  animation: spin 16s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Orbitadagi yo'ldosh zarralar */
+.orbit {
+  position: absolute; top: 50%; left: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.orbit i {
+  position: absolute; top: -3px; left: 50%;
+  width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--glow-cyan);
+}
+.orbit-1 { width: 150px; height: 150px; margin: -75px 0 0 -75px; animation: spin 4.5s linear infinite; }
+.orbit-2 { width: 180px; height: 180px; margin: -90px 0 0 -90px; animation: spin 8s linear infinite reverse; }
+.orbit-2 i { background: var(--violet); box-shadow: 0 0 10px var(--violet), 0 0 20px var(--glow-violet); width: 5px; height: 5px; }
+.orbit-3 { width: 214px; height: 214px; margin: -107px 0 0 -107px; animation: spin 13s linear infinite; }
+.orbit-3 i { background: var(--magenta); box-shadow: 0 0 10px var(--magenta); width: 4px; height: 4px; }
+
+/* Gapirayotganda orb ichidagi ekvalayzer */
+.eq {
+  position: absolute; inset: 0; z-index: 3;
+  display: none;
+  align-items: center; justify-content: center;
+  gap: 4px;
+}
+.eq i {
+  width: 4px; height: 12px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
+  animation: eqBar 0.8s ease-in-out infinite;
+}
+.eq i:nth-child(1) { animation-delay: 0s; }
+.eq i:nth-child(2) { animation-delay: .15s; }
+.eq i:nth-child(3) { animation-delay: .3s; }
+.eq i:nth-child(4) { animation-delay: .1s; }
+.eq i:nth-child(5) { animation-delay: .25s; }
+@keyframes eqBar { 50% { height: 34px; } }
+.orb-wrap.speaking .eq { display: flex; }
+
+.orb-status {
+  margin-top: 26px;
+  font-size: 13px; color: var(--text-dim);
+  letter-spacing: .5px;
+  font-family: "JetBrains Mono", monospace;
+  min-height: 18px;
+  text-align: center;
+  transition: color .3s;
+}
+
+/* Orb holatlari */
+.orb-wrap.thinking .orb-core { animation: orbThink 1.1s ease-in-out infinite; }
+@keyframes orbThink {
+  0%, 100% { filter: brightness(1) hue-rotate(0deg); transform: scale(1); }
+  50% { filter: brightness(1.4) hue-rotate(40deg); transform: scale(1.08); }
+}
+.orb-wrap.thinking .ring-1 { animation-duration: 1.2s; }
+.orb-wrap.thinking .ring-2 { animation-duration: 1.8s; }
+.orb-wrap.thinking .orbit-1 { animation-duration: 1s; }
+.orb-wrap.thinking .orbit-2 { animation-duration: 1.6s; }
+.orb-wrap.thinking .orbit-3 { animation-duration: 2.4s; }
+.orb-wrap.thinking .orb-plasma { filter: blur(8px) brightness(1.5); }
+.orb-wrap.thinking .orb-status { color: var(--violet); }
+
+.orb-wrap.listening .orb-core {
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7) 0%, transparent 22%),
+    radial-gradient(circle at 50% 50%, #f0abfc 0%, #e11d48 55%, #4c0519 100%);
+  box-shadow: 0 0 40px rgba(244,63,94,0.5), 0 0 90px rgba(232,121,249,0.35);
+  animation: orbThink .9s ease-in-out infinite;
+}
+.orb-wrap.listening .orb-plasma { filter: blur(9px) hue-rotate(120deg); }
+.orb-wrap.listening .orb-status { color: var(--magenta); }
+
+.orb-wrap.speaking .orb-status { color: var(--cyan); }
+.orb-wrap.speaking .orbit-1 { animation-duration: 2s; }
+.orb-wrap.speaking .orbit-2 { animation-duration: 3.4s; }
+
+/* Suhbat boshlangach orb kichrayadi */
+body.chat-active .orb-wrap { padding: 14px 0 4px; transform: scale(.62); margin-bottom: -28px; }
+body.chat-active .orb-status { display: none; }
+
+/* Idle holat: chat bo'sh — orb + chiplar markazda, input pastda */
+body:not(.chat-active) .orb-wrap { margin-top: 10vh; }
+body:not(.chat-active) .chat { flex: 0 0 auto; }
+body:not(.chat-active) .chips { padding-top: 26px; }
+body:not(.chat-active) .input-bar { margin-top: auto; }
+
+/* ═══ Chat ═══ */
+.chat {
+  flex: 1; width: 100%;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 12px 4px 16px;
+  scroll-behavior: smooth;
+  min-height: 0;
+}
+.chat::-webkit-scrollbar { width: 5px; }
+.chat::-webkit-scrollbar-thumb { background: rgba(120,160,255,0.2); border-radius: 4px; }
+
+.msg {
+  max-width: 78%;
+  padding: 13px 17px;
+  border-radius: 16px;
+  font-size: 14.5px; line-height: 1.65;
+  animation: msgIn .5s cubic-bezier(.2,.9,.3,1.1);
+  word-wrap: break-word;
+  position: relative;
+}
+/* Holografik paydo bo'lish */
+@keyframes msgIn {
+  0% { opacity: 0; transform: translateY(14px) scale(.96); filter: blur(6px) brightness(2); }
+  55% { filter: blur(0) brightness(1.25); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+.msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(34,211,238,0.14), rgba(99,102,241,0.18));
+  border: 1px solid rgba(34,211,238,0.25);
+  border-bottom-right-radius: 5px;
+}
+.msg.ai {
+  align-self: flex-start;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-bottom-left-radius: 5px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+.msg.ai::before {
+  content: "";
+  position: absolute; left: -1px; top: 12px; bottom: 12px;
+  width: 2px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--cyan), var(--violet));
+  box-shadow: 0 0 8px var(--glow-cyan);
+}
+/* AI xabari ustidan bir marta o'tuvchi skaner chizig'i */
+.msg.ai::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.7), transparent);
+  animation: msgScan 1s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes msgScan {
+  0% { top: 0; opacity: 1; }
+  100% { top: calc(100% - 2px); opacity: 0; }
+}
+.msg.ai .ai-tag {
+  display: flex; align-items: center; gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--cyan);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.msg.ai .ai-tag::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
+}
+.msg.ai .ai-tag .lat { color: var(--text-dim); letter-spacing: 1px; }
+.msg .replay-btn {
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  border-radius: 8px; padding: 4px 10px;
+  font-size: 11.5px; cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+}
+.msg .replay-btn:hover { color: var(--cyan); border-color: rgba(34,211,238,0.4); }
+.msg .replay-btn.playing { color: var(--cyan); border-color: rgba(34,211,238,0.5); box-shadow: 0 0 10px rgba(34,211,238,0.15); }
+.msg.error {
+  align-self: center;
+  background: rgba(225,29,72,0.08);
+  border: 1px solid rgba(225,29,72,0.3);
+  color: #fda4af; font-size: 13px;
+}
+
+/* Yozayapti indikatori */
+.typing { display: inline-flex; gap: 5px; align-items: center; padding: 4px 2px; }
+.typing i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cyan);
+  animation: tBounce 1.2s ease-in-out infinite;
+}
+.typing i:nth-child(2) { animation-delay: .15s; background: var(--violet); }
+.typing i:nth-child(3) { animation-delay: .3s; background: var(--magenta); }
+@keyframes tBounce { 30% { transform: translateY(-5px); opacity: .5; } }
+
+/* Typewriter kursori */
+.cursor-blink::after {
+  content: "▋";
+  color: var(--cyan);
+  animation: blink .7s step-end infinite;
+  margin-left: 1px;
+  text-shadow: 0 0 8px var(--glow-cyan);
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ═══ Chiplar ═══ */
+.chips {
+  display: flex; flex-wrap: wrap; gap: 9px;
+  justify-content: center;
+  padding: 4px 0 14px;
+  flex-shrink: 0;
+}
+.chip {
+  background: rgba(13, 20, 40, 0.6);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12.5px; font-family: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: color .25s, border-color .25s, box-shadow .25s, transform .25s;
+  position: relative; overflow: hidden;
+  opacity: 0;
+  animation: chipIn .6s cubic-bezier(.2,.9,.3,1.2) forwards;
+  animation-delay: calc(1.9s + var(--d, 0s));
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(14px) scale(.95); }
+  to { opacity: 1; transform: none; }
+}
+/* Shimmer — chip ustidan o'tuvchi yorug'lik */
+.chip::after {
+  content: ""; position: absolute; top: 0; bottom: 0;
+  left: -80%; width: 60%;
+  background: linear-gradient(105deg, transparent, rgba(120,200,255,0.14), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 5s ease-in-out infinite;
+  animation-delay: calc(var(--d, 0s) * 8);
+}
+@keyframes shimmer {
+  0%, 60%, 100% { left: -80%; }
+  30% { left: 130%; }
+}
+.chip:hover {
+  color: var(--cyan);
+  border-color: rgba(34,211,238,0.45);
+  box-shadow: 0 0 16px rgba(34,211,238,0.12);
+  transform: translateY(-1px);
+}
+body.chat-active .chips { display: none; }
+
+/* ═══ Kirish paneli ═══ */
+.input-bar { width: 100%; padding: 0 0 18px; flex-shrink: 0; }
+.input-shell {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--glass);
+  border-radius: 18px;
+  padding: 8px 10px 8px 20px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  transition: all .3s;
+  position: relative;
+}
+/* Aylanuvchi gradient chegara */
+.input-shell::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: 18px;
+  padding: 1px;
+  background: conic-gradient(from var(--ang, 0deg),
+    rgba(34,211,238,0.55), rgba(120,160,255,0.1) 30%,
+    rgba(167,139,250,0.5) 50%, rgba(120,160,255,0.1) 72%,
+    rgba(232,121,249,0.45) 88%, rgba(34,211,238,0.55));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: borderSpin 6s linear infinite;
+  pointer-events: none;
+  opacity: .55;
+  transition: opacity .3s;
+}
+@property --ang {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes borderSpin { to { --ang: 360deg; } }
+.input-shell:focus-within::before { opacity: 1; }
+.input-shell:focus-within {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 28px rgba(34,211,238,0.12);
+}
+#questionInput {
+  flex: 1;
+  background: transparent; border: none; outline: none;
+  color: var(--text);
+  font-size: 14.5px; font-family: inherit;
+  padding: 8px 0;
+  position: relative; z-index: 1;
+}
+#questionInput::placeholder { color: var(--text-dim); opacity: .7; }
+
+/* Yozib olishda jonli waveform */
+.wave {
+  position: absolute; left: 20px; right: 110px; top: 50%;
+  height: 34px; margin-top: -17px;
+  display: none;
+  align-items: center; gap: 3px;
+  z-index: 2;
+  pointer-events: none;
+}
+.wave i {
+  flex: 1; height: 4px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--magenta), #fb7185);
+  box-shadow: 0 0 6px rgba(244,63,94,0.4);
+  transition: height .06s linear;
+}
+.input-shell.recording .wave { display: flex; }
+.input-shell.recording #questionInput { opacity: 0; }
+
+.icon-btn {
+  width: 42px; height: 42px;
+  border-radius: 13px;
+  border: 1px solid var(--glass-border);
+  background: rgba(120,160,255,0.06);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.icon-btn:hover { color: var(--cyan); border-color: rgba(34,211,238,0.4); }
+.send-btn {
+  background: linear-gradient(135deg, rgba(34,211,238,0.2), rgba(99,102,241,0.28));
+  color: var(--cyan);
+  border-color: rgba(34,211,238,0.35);
+}
+.send-btn:hover { box-shadow: 0 0 18px rgba(34,211,238,0.25); transform: translateY(-1px); }
+.icon-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.mic-btn.recording {
+  color: #fb7185;
+  border-color: rgba(244,63,94,0.55);
+  background: rgba(244,63,94,0.12);
+  animation: micPulse 1.2s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.35); }
+  50% { box-shadow: 0 0 0 9px rgba(244,63,94,0); }
+}
+
+.input-hint {
+  text-align: center;
+  font-size: 11px; color: var(--text-dim);
+  opacity: .55; margin-top: 8px;
+  letter-spacing: .5px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* ═══ Harakat kamaytirilgan rejim ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
+  .chip { opacity: 1; }
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 640px) {
+  .brand { letter-spacing: 2px; font-size: 13px; }
+  .msg { max-width: 90%; }
+  .orb { width: 90px; height: 90px; }
+  .ring-1, .orbit-1 { width: 124px; height: 124px; margin: -62px 0 0 -62px; }
+  .ring-2, .orbit-2 { width: 150px; height: 150px; margin: -75px 0 0 -75px; }
+  .ring-3, .orbit-3 { width: 178px; height: 178px; margin: -89px 0 0 -89px; }
+  .vt-label { display: none; }
+  .hud-tele { display: none; }
+}

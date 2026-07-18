@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Eyeziyo — Gemini Test</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .gt-wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+    .gt-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .gt-head img { width: 38px; height: 38px; }
+    .gt-head h1 { font-size: 22px; font-weight: 700; margin: 0; }
+    .gt-sub { color: var(--text-subtle); font-size: 14px; margin-bottom: 24px; }
+    .gt-back { font-size: 13px; color: var(--brand); text-decoration: none; }
+    .gt-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .gt-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 18px; }
+    .gt-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .gt-chip { font-size: 12px; background: var(--bg-subtle); color: var(--text-subtle); padding: 4px 10px; border-radius: 999px; }
+    .gt-chip strong { color: var(--text); }
+    .gt-bar-row { margin-bottom: 12px; }
+    .gt-bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+    .gt-bar { height: 7px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; }
+    .gt-bar-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+    .gt-transcript { background: var(--bg-subtle); border-radius: var(--radius); padding: 14px; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; max-height: 360px; overflow-y: auto; }
+    .gt-list { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.7; }
+    .gt-block-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .gt-section { margin-top: 16px; }
+    .gt-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: gtspin .7s linear infinite; vertical-align: -3px; margin-right: 8px; }
+    @keyframes gtspin { to { transform: rotate(360deg); } }
+    .gt-hidden { display: none !important; }
+    .gt-warn { background: var(--warning-50); color: var(--warning); border-radius: var(--radius); padding: 12px 14px; font-size: 13.5px; margin-bottom: 16px; }
+    @media (max-width: 640px) { .gt-grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="gt-wrap">
+    <div class="gt-head">
+      <img src="/logo_eyeziyo.png" alt="">
+      <h1>Gemini Test</h1>
+    </div>
+    <div class="gt-sub">Audio fayl yuklab, transkripsiya va AI baholashni sinab ko'ring. Bu yerda hech narsa saqlanmaydi — faqat sinov. · <a class="gt-back" href="/">← Admin panel</a></div>
+
+    <!-- LOGIN -->
+    <div id="login-card" class="gt-card gt-hidden">
+      <div class="card-title" style="margin-bottom:14px">Administrator sifatida kiring</div>
+      <form id="login-form">
+        <label class="field"><span class="label">Email</span><input type="email" name="email" required placeholder="siz@muassasa.uz" autocomplete="username"></label>
+        <label class="field"><span class="label">Parol</span><input type="password" name="password" required placeholder="••••••••" autocomplete="current-password"></label>
+        <div class="error" id="login-error"></div>
+        <button type="submit" class="btn-primary" id="login-btn" style="width:100%;height:42px">Kirish</button>
+      </form>
+    </div>
+
+    <!-- TEST FORM -->
+    <div id="app" class="gt-hidden">
+      <form id="gt-form" class="gt-card">
+        <label class="field">
+          <span class="label">Audio fayl *</span>
+          <input type="file" name="audio" id="gt-audio" accept="audio/*" required>
+          <span class="hint" style="font-size:12px;color:var(--text-faint)">WAV, MP3, M4A, OGG, FLAC · maksimum ~100MB (katta fayllar Files API orqali yuklanadi — biroz sekinroq)</span>
+        </label>
+        <div class="gt-grid2">
+          <label class="field"><span class="label">Fan / soha</span><input type="text" name="course_type" placeholder="Masalan: Backend dasturlash"></label>
+          <label class="field"><span class="label">Mavzu</span><input type="text" name="topic" placeholder="Masalan: REST API asoslari"></label>
+        </div>
+        <input type="hidden" name="duration_minutes" value="10">
+        <label class="field">
+          <span class="label">Model</span>
+          <select name="model">
+            <option value="">Avtomatik (flash-lite → flash)</option>
+            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+          </select>
+        </label>
+        <div class="error" id="gt-error"></div>
+        <button type="submit" class="btn-primary" id="gt-submit" style="height:44px">Transkripsiya va baholash</button>
+      </form>
+
+      <div id="gt-result"></div>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script>
+    const API = window.EYEZIYO_API_BASE;
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("eyeziyo_theme") || "light");
+
+    const $ = (id) => document.getElementById(id);
+    const loginCard = $("login-card"), app = $("app");
+    function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function scoreColor(v) { return v >= 80 ? "success" : v >= 60 ? "warning" : v > 0 ? "danger" : "muted"; }
+    function colVar(c) { return c === "success" ? "var(--success)" : c === "warning" ? "var(--warning)" : c === "danger" ? "var(--danger)" : "var(--text-faint)"; }
+
+    function token() { return localStorage.getItem("eyeziyo_token"); }
+
+    function showLogin() { loginCard.classList.remove("gt-hidden"); app.classList.add("gt-hidden"); }
+    function showApp() { loginCard.classList.add("gt-hidden"); app.classList.remove("gt-hidden"); }
+
+    // ── Auth bootstrap: reuse the admin-panel token if present ──
+    async function init() {
+      if (!token()) { showLogin(); return; }
+      try {
+        const me = await fetch(API + "/api/users/me", { headers: { Authorization: "Bearer " + token() } });
+        if (!me.ok) throw new Error();
+        const u = await me.json();
+        if (u.role !== "admin") { localStorage.removeItem("eyeziyo_token"); showLogin(); return; }
+        showApp();
+      } catch { showLogin(); }
+    }
+
+    $("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = $("login-error"), btn = $("login-btn"), f = e.target;
+      err.classList.remove("show"); btn.disabled = true; btn.textContent = "Kirilmoqda...";
+      try {
+        const r = await fetch(API + "/api/auth/login", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: f.email.value.trim(), password: f.password.value }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || "Kirish xatosi");
+        localStorage.setItem("eyeziyo_token", d.access_token);
+        const me = await (await fetch(API + "/api/users/me", { headers: { Authorization: "Bearer " + d.access_token } })).json();
+        if (me.role !== "admin") { localStorage.removeItem("eyeziyo_token"); throw new Error("Faqat administrator kirishi mumkin"); }
+        showApp();
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.add("show");
+      } finally {
+        btn.disabled = false; btn.textContent = "Kirish";
+      }
+    });
+
+    // ── Auto-detect duration from the chosen file (browser reads it for free) ──
+    $("gt-audio").addEventListener("change", () => {
+      const file = $("gt-audio").files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const a = new Audio();
+      a.preload = "metadata";
+      a.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        if (isFinite(a.duration) && a.duration > 0) {
+          document.querySelector('[name="duration_minutes"]').value = Math.max(1, Math.round(a.duration / 60));
+        }
+      };
+      a.onerror = () => URL.revokeObjectURL(url);
+      a.src = url;
+    });
+
+    // ── Submit: upload audio → transcribe → evaluate ──
+    $("gt-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const f = e.target, err = $("gt-error"), btn = $("gt-submit"), out = $("gt-result");
+      err.classList.remove("show");
+      const file = $("gt-audio").files[0];
+      if (!file) { err.textContent = "Audio fayl tanlang"; err.classList.add("show"); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="gt-spinner"></span>Gemini ishlamoqda... (30–90s)';
+      out.innerHTML = "";
+
+      const fd = new FormData();
+      fd.append("audio", file);
+      fd.append("course_type", f.course_type.value.trim());
+      fd.append("topic", f.topic.value.trim());
+      fd.append("duration_minutes", f.duration_minutes.value);
+      fd.append("model", f.model.value);
+
+      try {
+        const r = await fetch(API + "/api/admin/gemini-test", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token() },
+          body: fd,
+        });
+        if (r.status === 401) { localStorage.removeItem("eyeziyo_token"); showLogin(); throw new Error("Sessiya tugagan, qayta kiring"); }
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || ("HTTP " + r.status));
+        renderResult(d);
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.add("show");
+      } finally {
+        btn.disabled = false; btn.textContent = "Transkripsiya va baholash";
+      }
+    });
+
+    function bar(value, label) {
+      const v = Math.max(0, Math.min(100, Math.round(value || 0)));
+      const c = colVar(scoreColor(v));
+      return `<div class="gt-bar-row">
+        <div class="gt-bar-top"><span>${esc(label)}</span><span style="font-weight:600">${v}</span></div>
+        <div class="gt-bar"><div class="gt-bar-fill" style="width:${v}%;background:${c}"></div></div>
+      </div>`;
+    }
+    function listBlock(title, color, items) {
+      if (!items || items.length === 0) return "";
+      return `<div class="gt-section"><div class="gt-block-title" style="color:${color}">${esc(title)}</div>
+        <ul class="gt-list">${items.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>`;
+    }
+
+    function renderResult(d) {
+      const out = $("gt-result");
+      const sizeMb = (d.size_bytes / 1024 / 1024).toFixed(2);
+      const meta = `<div class="gt-meta">
+        ${d.model ? `<span class="gt-chip">Model: <strong>${esc(d.model)}</strong></span>` : ""}
+        <span class="gt-chip">Hajm: <strong>${sizeMb}MB</strong></span>
+        <span class="gt-chip">Format: <strong>${esc(d.mime)}</strong></span>
+        <span class="gt-chip">Belgilar: <strong>${d.transcript_chars || 0}</strong></span>
+        <span class="gt-chip">STT: <strong>${(d.stt_ms / 1000).toFixed(1)}s</strong></span>
+        ${d.eval_ms ? `<span class="gt-chip">Baholash: <strong>${(d.eval_ms / 1000).toFixed(1)}s</strong></span>` : ""}
+      </div>`;
+
+      if (d.warning) {
+        out.innerHTML = `<div class="gt-card">${meta}<div class="gt-warn">${esc(d.warning)}</div></div>`;
+        return;
+      }
+
+      const e = d.evaluation || {};
+      const oc = scoreColor(e.overall_score);
+      const evalHtml = e.overall_score != null ? `
+        <div class="gt-card">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span class="score-chip ${oc}" style="font-size:20px;padding:6px 18px">${e.overall_score}%</span>
+            <div><div class="card-title">AI baholash</div><div class="card-subtitle">Gemini · ${esc(d.model || "")}</div></div>
+          </div>
+          ${bar(e.clarity_score, "Aniqlik (Clarity)")}
+          ${bar(e.engagement_score, "Jalb qilish (Engagement)")}
+          ${bar(e.content_score, "Kontent sifati (Content)")}
+          ${e.summary ? `<div class="gt-transcript" style="margin-top:12px;max-height:none">${esc(e.summary)}</div>` : ""}
+          ${listBlock("✓ Kuchli tomonlari", "var(--success)", e.strengths)}
+          ${listBlock("△ Yaxshilash kerak", "var(--warning)", e.improvements)}
+          ${listBlock("💡 Maslahatlar", "var(--brand)", e.advice)}
+        </div>` : "";
+
+      const transcriptHtml = `
+        <div class="gt-card">
+          <div class="card-title" style="margin-bottom:10px">Transkripsiya</div>
+          <div class="gt-transcript">${esc(d.transcript) || "<em>Bo'sh</em>"}</div>
+        </div>`;
+
+      out.innerHTML = `<div class="gt-card" style="padding-bottom:6px">${meta}</div>${evalHtml}${transcriptHtml}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

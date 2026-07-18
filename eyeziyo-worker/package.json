@@ -1,0 +1,17 @@
+{
+  "name": "eyeziyo-api",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create eyeziyo-db",
+    "db:migrate": "wrangler d1 execute eyeziyo-db --file=schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  }
+}

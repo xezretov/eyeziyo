@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build & cache
+.gradle/
+.kotlin/
+build/
+.idea/
+*.iml
+
+# Wrangler cache
+.wrangler/
+
+# Local config
+local.properties
+
+# Python
+.venv*/
+.pip-cache/
+__pycache__/
+
+# ML models & cache
+.hf-cache/
+models/
+aisha-ct2/
+
+# Large audio files
+*.flac
+
+# Playwright MCP snapshots
+.playwright-mcp/
+
+# Claude config
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

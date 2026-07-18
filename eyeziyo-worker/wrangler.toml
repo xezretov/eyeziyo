@@ -1,0 +1,24 @@
+name = "eyeziyo-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+GEMINI_MODEL = "gemini-flash-lite-latest"
+
+# Secrets — set via `wrangler secret put <NAME>`
+#   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put JWT_SECRET   (use a long random value, e.g. `openssl rand -hex 32`)
+# Do NOT put secrets in this file — wrangler.toml may be committed to git.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "eyeziyo-db"
+database_id = "f7a495fb-ae88-43e4-9dc7-09038a9b7c7e"
+
+[[durable_objects.bindings]]
+name = "RECORDING_SESSION"
+class_name = "RecordingSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RecordingSession"]

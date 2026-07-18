@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eyeziyo AI — Ovozli tahlilchi</title>
+  <link rel="icon" href="favicon-32.png" sizes="32x32">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ai-menu.css">
+</head>
+<body>
+  <!-- Boot sekvensiyasi -->
+  <div id="boot">
+    <div class="boot-core"></div>
+    <div class="boot-lines" id="bootLines"></div>
+  </div>
+
+  <!-- Fon qatlamlari -->
+  <canvas id="bgCanvas"></canvas>
+  <div class="grid-overlay" id="gridOverlay"></div>
+  <div class="scanline"></div>
+  <div class="vignette"></div>
+
+  <!-- HUD burchaklari -->
+  <div class="hud hud-tl"></div>
+  <div class="hud hud-tr"></div>
+  <div class="hud hud-bl"></div>
+  <div class="hud hud-br"></div>
+  <div class="hud-tele tele-left" id="teleLeft">CORE · ONLINE</div>
+  <div class="hud-tele tele-right" id="teleRight">SESSIYA · 00:00</div>
+
+  <header class="topbar">
+    <a class="back-link" href="index.html">
+      <span class="back-arrow">←</span> Panel
+    </a>
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name glitch" data-text="EYEZIYO AI">EYEZIYO <b>AI</b></span>
+      <span class="brand-badge">v2.0</span>
+    </div>
+    <div class="topbar-right">
+      <label class="voice-toggle" title="Javoblarni ovozli o'qib berish">
+        <input type="checkbox" id="autoVoice" checked>
+        <span class="vt-track"><span class="vt-thumb"></span></span>
+        <span class="vt-label">Ovoz</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- AI yadro (orb) -->
+    <div class="orb-wrap" id="orbWrap">
+      <div class="orb" id="orb">
+        <div class="orb-ring ring-1"></div>
+        <div class="orb-ring ring-2"></div>
+        <div class="orb-ring ring-3"></div>
+        <div class="orbit orbit-1"><i></i></div>
+        <div class="orbit orbit-2"><i></i></div>
+        <div class="orbit orbit-3"><i></i></div>
+        <div class="orb-plasma p1"></div>
+        <div class="orb-plasma p2"></div>
+        <div class="orb-core"></div>
+        <div class="orb-shine"></div>
+        <div class="orb-glow"></div>
+        <div class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="orb-status" id="orbStatus">Salom! Savolingizni yozing yoki gapiring</div>
+    </div>
+
+    <!-- Suhbat -->
+    <section class="chat" id="chat" aria-live="polite"></section>
+
+    <!-- Tavsiya chiplar -->
+    <div class="chips" id="chips">
+      <button class="chip" style="--d:.0s">Bu hafta qaysi o'qituvchi eng zo'r natija qildi?</button>
+      <button class="chip" style="--d:.08s">Bu oy jami nechta dars o'tildi?</button>
+      <button class="chip" style="--d:.16s">Engagement bo'yicha eng past ko'rsatkich kimda?</button>
+      <button class="chip" style="--d:.24s">Oxirgi darslar haqida qisqacha gapirib ber</button>
+    </div>
+
+    <!-- Kirish paneli -->
+    <footer class="input-bar">
+      <div class="input-shell" id="inputShell">
+        <div class="wave" id="wave"></div>
+        <input type="text" id="questionInput" placeholder="Savolingizni yozing..." autocomplete="off" maxlength="500">
+        <button class="icon-btn mic-btn" id="micBtn" title="Ovozli savol">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <button class="icon-btn send-btn" id="sendBtn" title="Yuborish">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter — yuborish · 🎙 — ovozli savol</div>
+    </footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="ai-menu.js"></script>
+</body>
+</html>

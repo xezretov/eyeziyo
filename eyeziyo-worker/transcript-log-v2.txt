@@ -1,0 +1,287 @@
+════════════════════════════════════════════
+ Audio: C:/Users/dilsh/Downloads/audio.wav
+ Size : 21.53 MB
+ Dur  : 705.6 s  ( 11.76 min)
+ Fmt  : 8000 Hz, 1 ch, 32 bit, format = 1
+ Mode : chunked
+ Course: Tarix | Topic: Ahmad Temur va Temuriylar davri
+════════════════════════════════════════════
+
+Chunks: 62 of 62 (12s each, 0.5s overlap)
+
+[ 1/62] 0.0s–12.0s ... 2.5-flash-lite 14658ms +144ch
+     "Assalomu alaykum aziz o'quvchilar, bugungi mavzuyimiz beshinchi dars Ahmad Temur va Temuriylar davri. Birinchi sabog'imiz 14-asrning o'rtalarida"
+[ 2/62] 11.5s–23.5s ... 2.5-flash-lite 11992ms +109ch
+     "14-asrning o'rtalarida siyosiy vaziyat murakkablashdi. Agar shuncha siyosiy ta'qiblar, siyosiy kurash maydoni, mamlakat mustaqilligi"
+[ 3/62] 23.0s–35.0s ... 2.5-flash-lite 6873ms +231ch
+     "va mustaqillikni saqlab qolish masalasi kun tartibiga qo'yilgan edi. Ana shu murakkab davrda, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, 1370-yillarda, 1370-yil..."
+[ 4/62] 34.5s–46.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 10538ms +60ch
+     "salomliklarga bo'linib ketgan. Bu yerdagi xonlar o'zlarini x"
+[ 5/62] 46.0s–58.0s ... 2.5-flash-lite 8864ms +213ch
+     "xonlar o'zlarini xon deb atashga, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, salomlik..."
+[ 6/62] 57.5s–69.5s ... 2.5-flash-lite 5270ms SKIPPED (hallucination, 1207ch)
+[ 7/62] 69.0s–81.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 8619ms +126ch
+     "bu yerda bu o'z safolarining bayramgarlikka olib keluvchi yuksali. Biz zo'rlik va zulmga qarshi xalq harakatlari o'chadi. Mana"
+[ 8/62] 80.5s–92.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 11596ms +64ch
+     "Mana o'zaro ichki kurashlar deganlar bo'lib ketgan va ularga qarshi x"
+[ 9/62] 92.0s–104.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 11228ms +136ch
+     "Amir Temur yoshlik davri. Amir Temur Kesh viloyatida Xo'ja Ilg'or qishlog'ida, Yakkabog' tumanida 1336-yil 9-aprel kuni tavallud topgan."
+[10/62] 103.5s–115.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 10238ms +84ch
+     "Amir Temur Amir Temur arab tilida arab tilida Amir Temur arab tilida Amir Temur arab"
+[11/62] 115.0s–127.0s ... 2.5-flash-lite 8169ms SKIPPED (hallucination, 2299ch)
+[12/62] 126.5s–138.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 8808ms +53ch
+     "Amir Temur yoshlikdan qonun-qoidalar kechdi. Amir Tem"
+[13/62] 138.0s–150.0s ... 2.5-flash-lite 12605ms +1113ch
+     "qilib o'rgangan. Amir Temur o'zining harbiy yurishlari davomida ko'plab davlatlar bilan aloqa o'rnatgan. Uning davlati o'zining keng hududi va kuchli armiyasi bilan ajralib turgan...."
+[14/62] 149.5s–161.5s ... 2.5-flash-lite 5587ms +68ch
+     "davlatning iqtisodiy va madaniy rivojlanishiga katta hissa qo'shgan."
+[15/62] 161.0s–173.0s ... 2.5-flash-lite 10843ms SKIPPED (hallucination, 1703ch)
+[16/62] 172.5s–184.5s ... 2.5-flash-lite 11939ms SKIPPED (hallucination, 1741ch)
+[17/62] 184.0s–196.0s ... 2.5-flash-lite 10761ms SKIPPED (hallucination, 1691ch)
+[18/62] 195.5s–207.5s ... 2.5-flash-lite 7507ms SKIPPED (hallucination, 1761ch)
+[19/62] 207.0s–219.0s ... 2.5-flash-lite 7745ms SKIPPED (hallucination, 1269ch)
+[20/62] 218.5s–230.5s ... 2.5-flash-lite 10650ms SKIPPED (hallucination, 1690ch)
+[21/62] 230.0s–242.0s ... 2.5-flash-lite 12448ms SKIPPED (hallucination, 1679ch)
+[22/62] 241.5s–253.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 11317ms +52ch
+     "yangi dunyoyiga xalqqa o'zini olgan
+vaqtcha jihatlar"
+[23/62] 253.0s–265.0s ... 2.5-flash-lite 6143ms SKIPPED (hallucination, 1610ch)
+[24/62] 264.5s–276.5s ... 2.5-flash-lite 6761ms SKIPPED (hallucination, 1609ch)
+[25/62] 276.0s–288.0s ... 2.5-flash-lite 10780ms SKIPPED (hallucination, 1598ch)
+[26/62] 287.5s–299.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9946ms +32ch
+     "just to come or get in or get in"
+[27/62] 299.0s–311.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 7874ms +145ch
+     "o'zbekcha 15-asrning 20-yillari oxirida Movarounnahrda amirlarning o'zaro kurashi kuchayib borib, mamlakatda siyosiy parokandalik avjiga chiqadi."
+[28/62] 310.5s–322.5s ... 2.5-flash-lite 10492ms SKIPPED (hallucination, 1343ch)
+[29/62] 322.0s–334.0s ... 2.5-flash-lite 6472ms SKIPPED (hallucination, 1713ch)
+[30/62] 333.5s–345.5s ... 2.5-flash-lite 12574ms +283ch
+     "va shu tariqa mamlakatda hokimiyat uchun kurash boshlanadi. Bu kurashda bir qancha amirlar ishtirok etadi. Ulardan eng mashhurlari, eng kuchlilari, eng ta'sirchanlari bu amir Xusra..."
+[31/62] 345.0s–357.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9506ms +60ch
+     "qoyinda bo'ladi. 24 yoshli Amir Temur esa boshqacha yo'l tut"
+[32/62] 356.5s–368.5s ... 2.5-flash-lite 12673ms SKIPPED (hallucination, 1672ch)
+[33/62] 368.0s–380.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 12586ms +62ch
+     "o'g'lini nazorat qilib, shahar boshlig'i degan nomni beradi. O"
+[34/62] 379.5s–391.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  [gemini-2.5-flash] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+FAILED (10852ms)
+[35/62] 391.0s–403.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  [gemini-2.5-flash] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+FAILED (7678ms)
+[36/62] 402.5s–414.5s ... 2.5-flash-lite 11941ms +62ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[37/62] 414.0s–426.0s ... 2.5-flash-lite 14346ms SKIPPED (hallucination, 1355ch)
+[38/62] 425.5s–437.5s ... 2.5-flash-lite 8986ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[39/62] 437.0s–449.0s ... 2.5-flash-lite 7188ms SKIPPED (hallucination, 1214ch)
+[40/62] 448.5s–460.5s ... 2.5-flash-lite 5762ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[41/62] 460.0s–472.0s ... 2.5-flash-lite 6446ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[42/62] 471.5s–483.5s ... 2.5-flash-lite 5052ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[43/62] 483.0s–495.0s ... 2.5-flash-lite 9324ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[44/62] 494.5s–506.5s ... 2.5-flash-lite 16490ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[45/62] 506.0s–518.0s ... 2.5-flash-lite 15737ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[46/62] 517.5s–529.5s ... 2.5-flash-lite 9281ms +0ch
+     "o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib,"
+[47/62] 529.0s–541.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 8822ms +62ch
+     "harakat
+harakatida
+harakatida
+harakatida
+harakatida
+harakatida"
+[48/62] 540.5s–552.5s ... 2.5-flash-lite 6647ms SKIPPED (hallucination, 2142ch)
+[49/62] 552.0s–564.0s ... 2.5-flash-lite 9174ms SKIPPED (hallucination, 2131ch)
+[50/62] 563.5s–575.5s ... 2.5-flash-lite 15454ms SKIPPED (hallucination, 2142ch)
+[51/62] 575.0s–587.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9075ms +43ch
+     "harakatida
+o'g'lini nazorat qilib, shahar boshlig'i de"
+[52/62] 586.5s–598.5s ... 2.5-flash-lite 13782ms SKIPPED (hallucination, 1533ch)
+[53/62] 598.0s–610.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9369ms +133ch
+     "shahar dagi beqarorlik to'g'risida xabar Amir Temurga, Amir Husaynga ham xabar yetadi. 1366-yilgi mahalda ular Samarqandga kelishadi."
+[54/62] 609.5s–621.5s ... 2.5-flash-lite 12723ms SKIPPED (hallucination, 1603ch)
+[55/62] 621.0s–633.0s ... 2.5-flash-lite 10293ms SKIPPED (hallucination, 1666ch)
+[56/62] 632.5s–644.5s ... 2.5-flash-lite 7999ms +116ch
+     "va o'g'lining hayoti hamda o'zining hayoti hamda shularning yashashlari yo'qoladi. Bularning hammasi o'zidan qoladi."
+[57/62] 644.0s–656.0s ... 2.5-flash-lite 4706ms SKIPPED (duplicate of recent)
+[58/62] 655.5s–667.5s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9196ms +53ch
+     "qanaqa shularni qanaqa shularni
+Buzg'unchilik keyin x"
+[59/62] 667.0s–679.0s ...   [gemini-2.5-flash-lite] 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+2.5-flash 9328ms +65ch
+     "niyat yo'q ostida sholib borgan. Bu darajada ta'sirlar bilan bosh"
+[60/62] 678.5s–690.5s ... 2.5-flash-lite 8074ms SKIPPED (hallucination, 1631ch)
+[61/62] 690.0s–702.0s ... 2.5-flash-lite 8746ms SKIPPED (hallucination, 1979ch)
+[62/62] 701.5s–705.6s ... 2.5-flash-lite 9289ms SKIPPED (duplicate of recent)
+
+════════════════════════════════════════════
+Done: 33 ok, 27 empty, 2 failed
+Transcript: 3593 chars
+════════════════════════════════════════════
+
+─── RAW TRANSCRIPT (concatenated) ───
+Assalomu alaykum aziz o'quvchilar, bugungi mavzuyimiz beshinchi dars Ahmad Temur va Temuriylar davri. Birinchi sabog'imiz 14-asrning o'rtalarida siyosiy vaziyat murakkablashdi. Agar shuncha siyosiy ta'qiblar, siyosiy kurash maydoni, mamlakat mustaqilligi va mustaqillikni saqlab qolish masalasi kun tartibiga qo'yilgan edi. Ana shu murakkab davrda, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, salomliklarga bo'linib ketgan. Bu yerdagi xonlar o'zlarini x xonlar o'zlarini xon deb atashga, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, 1370-yillarda, salomliklarga bo'linib ketgan. Bu yerdagi bu yerda bu o'z safolarining bayramgarlikka olib keluvchi yuksali. Biz zo'rlik va zulmga qarshi xalq harakatlari o'chadi. Mana o'zaro ichki kurashlar deganlar bo'lib ketgan va ularga qarshi x Amir Temur yoshlik davri. Amir Temur Kesh viloyatida Xo'ja Ilg'or qishlog'ida, Yakkabog' tumanida 1336-yil 9-aprel kuni tavallud topgan. Amir Temur Amir Temur arab tilida arab tilida Amir Temur arab tilida Amir Temur arab Amir Temur yoshlikdan qonun-qoidalar kechdi. Amir Tem qilib o'rgangan. Amir Temur o'zining harbiy yurishlari davomida ko'plab davlatlar bilan aloqa o'rnatgan. Uning davlati o'zining keng hududi va kuchli armiyasi bilan ajralib turgan. Amir Temurning o'limidan so'ng uning saltanati vorislari tomonidan boshqarilgan. Bu davr Temuriylar davri deb nomlanadi. Temuriylar davrida ilm-fan, madaniyat, me'morchilik, san'at rivojlangan. Samarqand, Buxoro, Hirot kabi shaharlar ilm-fan va madaniyat markazlariga aylangan. Amir Temurning o'zi ham ilm-fan homiysi bo'lgan. U ko'plab olimlar, shoirlar, musiqachilarni o'z saroyiga chorlagan. Temuriylar davrida yaratilgan ko'plab me'moriy yodgorliklar bugungi kunda ham o'zining go'zalligi bilan ajralib turadi. Masalan, Samarqanddagi Shohizinda majmuasi, Bibixonim masjidi, Gur-Amir maqbarasi shular jumlasidandir. Temuriylar davri o'zbek davlatchiligi tarixida muhim o'rin tutadi. Bu davrda o'zbek xalqi o'zining madaniy va ma'naviy merosini boyitgan. Amir Temurning o'zi esa o'zbek xalqining buyuk sarkardasi va davlat arbobi sifatida tarixda qolgan. Uning nomi va faoliyati bugungi kunda ham o'rganilmoqda va yodga olinmoqda. davlatning iqtisodiy va madaniy rivojlanishiga katta hissa qo'shgan. yangi dunyoyiga xalqqa o'zini olgan vaqtcha jihatlar just to come or get in or get in o'zbekcha 15-asrning 20-yillari oxirida Movarounnahrda amirlarning o'zaro kurashi kuchayib borib, mamlakatda siyosiy parokandalik avjiga chiqadi. va shu tariqa mamlakatda hokimiyat uchun kurash boshlanadi. Bu kurashda bir qancha amirlar ishtirok etadi. Ulardan eng mashhurlari, eng kuchlilari, eng ta'sirchanlari bu amir Xusrav, amir Jaloliddin, amir Qazag'on, amir Boyanquli, amir Xojibayram, amir Xojibayram va amir Xojibayram. qoyinda bo'ladi. 24 yoshli Amir Temur esa boshqacha yo'l tut o'g'lini nazorat qilib, shahar boshlig'i degan nomni beradi. O o'ziga bo'ysundirib, o'ziga bo'ysundirib, o'ziga bo'ysundirib, harakat harakatida harakatida harakatida harakatida harakatida o'g'lini nazorat qilib, shahar boshlig'i de shahar dagi beqarorlik to'g'risida xabar Amir Temurga, Amir Husaynga ham xabar yetadi. 1366-yilgi mahalda ular Samarqandga kelishadi. va o'g'lining hayoti hamda o'zining hayoti hamda shularning yashashlari yo'qoladi. Bularning hammasi o'zidan qoladi. qanaqa shularni qanaqa shularni Buzg'unchilik keyin x niyat yo'q ostida sholib borgan. Bu darajada ta'sirlar bilan bosh
+
+─── POLISHED ───
+Assalomu alaykum, aziz o'quvchilar. Bugungi mavzuyimiz beshinchi dars: Ahmad Temur va Temuriylar davri. Birinchi sabog'imiz 14-asrning o'rtalarida siyosiy vaziyat murakkablashdi. Agar shuncha siyosiy ta'qiblar, siyosiy kurash maydoni, mamlakat mustaqilligi va mustaqillikni saqlab qolish masalasi kun tartibiga qo'yilgan edi. Ana shu murakkab davrda, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, salomliklarga bo'linib ketgan. Bu yerdagi xonlar o'zlarini xon deb atashga, ya'ni 14-asrning o'rtalarida, aynan shu davrda, 1370-yillarda, salomliklarga bo'linib ketgan. Bu yerdagi bu o'z safolarining bayramgarlikka olib keluvchi yuksali. Biz zo'rlik va zulmga qarshi xalq harakatlari o'chadi. Mana o'zaro ichki kurashlar deganlar bo'lib ketgan va ularga qarshi Amir Temur yoshlik davri. Amir Temur Kesh viloyatida Xo'ja Ilg'or qishlog'ida, Yakkabog' tumanida 1336-yil 9-aprel kuni tavallud topgan. Amir Temur arab tilida Amir Temur yoshlikdan qonun-qoidalar kechdi. Amir Tem qilib o'rgangan. Amir Temur o'zining harbiy yurishlari davomida ko'plab davlatlar bilan aloqa o'rnatgan. Uning davlati o'zining keng hududi va kuchli armiyasi bilan ajralib turgan. Amir Temurning o'limidan so'ng uning saltanati vorislari tomonidan boshqarilgan. Bu davr Temuriylar davri deb nomlanadi. Temuriylar davrida ilm-fan, madaniyat, me'morchilik, san'at rivojlangan. Samarqand, Buxoro, Hirot kabi shaharlar ilm-fan va madaniyat markazlariga aylangan. Amir Temurning o'zi ham ilm-fan homiysi bo'lgan. U ko'plab olimlar, shoirlar, musiqachilarni o'z saroyiga chorlagan. Temuriylar davrida yaratilgan ko'plab me'moriy yodgorliklar bugungi kunda ham o'zining go'zalligi bilan ajralib turadi. Masalan, Samarqanddagi Shohizinda majmuasi, Bibixonim masjidi, Gur-Amir maqbarasi shular jumlasidandir. Temuriylar davri o'zbek davlatchiligi tarixida muhim o'rin tutadi. Bu davrda o'zbek xalqi o'zining madaniy va ma'naviy merosini boyitgan. Amir Temurning o'zi esa o'zbek xalqining buyuk sarkardasi va davlat arbobi sifatida tarixda qolgan. Uning nomi va faoliyati bugungi kunda ham o'rganilmoqda va yodga olinmoqda. davlatning iqtisodiy va madaniy rivojlanishiga katta hissa qo'shgan. yangi dunyoyiga xalqqa o'zini olgan vaqtcha jihatlar just to come or get in or get in o'zbekcha 15-asrning 20-yillari oxirida Movarounnahrda amirlarning o'zaro kurashi kuchayib borib, mamlakatda siyosiy parokandalik avjiga chiqadi. va shu tariqa mamlakatda hokimiyat uchun kurash boshlanadi. Bu kurashda bir qancha amirlar ishtirok etadi. Ulardan eng mashhurlari, eng kuchlilari, eng ta'sirchanlari bu amir Xusrav, amir Jaloliddin, amir Qazag'on, amir Boyanquli, amir Xojibayram. qoyinda bo'ladi. 24 yoshli Amir Temur esa boshqacha yo'l tut o'g'lini nazorat qilib, shahar boshlig'i degan nomni beradi. O o'ziga bo'ysundirib, harakat harakatida o'g'lini nazorat qilib, shahar boshlig'i de shahar dagi beqarorlik to'g'risida xabar Amir Temurga, Amir Husaynga ham xabar yetadi. 1366-yilgi mahalda ular Samarqandga kelishadi. va o'g'lining hayoti hamda o'zining hayoti hamda shularning yashashlari yo'qoladi. Bularning hammasi o'zidan qoladi. qanaqa shularni Buzg'unchilik keyin x niyat yo'q ostida sholib borgan. Bu darajada ta'sirlar bilan bosh
+
+→ Saved polished to transcript-v2.txt

@@ -1,0 +1,154 @@
+<resources>
+    <string name="app_name">Mentor</string>
+
+    <string name="tab_home">Главная</string>
+    <string name="tab_lessons">Уроки</string>
+    <string name="tab_practice">Практика</string>
+    <string name="tab_stats">Статистика</string>
+    <string name="tab_profile">Профиль</string>
+
+    <string name="login_title">Mentor</string>
+    <string name="login_subtitle">Усваивайте материал глубже с помощью ИИ</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Пароль</string>
+    <string name="login_button">Войти</string>
+    <string name="login_forgot">Забыли пароль?</string>
+    <string name="login_hint">Логин и пароль выдаёт преподаватель</string>
+    <string name="login_only_students">Это приложение только для учеников</string>
+    <string name="login_biometric_prompt">Вход в Mentor</string>
+    <string name="login_biometric_subtitle">Подтвердите отпечатком или Face ID</string>
+    <string name="login_biometric_negative">Войти паролем</string>
+    <string name="login_biometric_offer">Использовать биометрию в следующий раз?</string>
+
+    <string name="home_greeting">Здравствуйте, %1$s</string>
+    <string name="home_greeting_default">ученик</string>
+    <string name="home_what_today">С чего начнём сегодня?</string>
+    <string name="home_pending">Несданные уроки</string>
+    <string name="home_pending_count">%1$d</string>
+    <string name="home_streak_today">🔥 %1$d дней подряд</string>
+    <string name="home_streak_start">Начните серию!</string>
+    <string name="home_streak_freeze_used">Сегодня использован freeze</string>
+    <string name="home_continue">Продолжить:</string>
+    <string name="home_no_lessons">Уроков пока нет. Они появятся после занятия преподавателя.</string>
+    <string name="home_all_done">Все задания выполнены! ✨</string>
+    <string name="home_daily_practice">Сегодняшняя практика</string>
+    <string name="home_daily_practice_sub">5 вопросов — 3 минуты</string>
+    <string name="home_review_terms">К повторению: %1$d терминов</string>
+
+    <string name="lessons_title">Уроки</string>
+    <string name="lessons_search">Поиск по теме или группе</string>
+    <string name="lessons_filter_all">Все</string>
+    <string name="lessons_filter_pending">Несданные</string>
+    <string name="lessons_filter_done">Сданные</string>
+    <string name="lessons_empty">Уроков нет</string>
+    <string name="lessons_refresh">Обновить</string>
+
+    <string name="lesson_topic_default">Урок</string>
+    <string name="lesson_duration">Длительность: %1$d мин %2$d сек</string>
+    <string name="lesson_attempt_done">Тест сдан</string>
+    <string name="lesson_attempt_score">Балл: %1$d%%</string>
+    <string name="lesson_action_test">Пройти тест</string>
+    <string name="lesson_action_test_again">Просмотреть тест</string>
+    <string name="lesson_action_test_sub">10 вопросов по уроку</string>
+    <string name="lesson_action_terms">Ключевые термины</string>
+    <string name="lesson_action_terms_sub">Объяснения от ИИ</string>
+    <string name="lesson_action_chat">Чат с ментором</string>
+    <string name="lesson_action_chat_sub">Спросите — ИИ ответит по уроку</string>
+    <string name="lesson_action_flashcards">Карточки</string>
+    <string name="lesson_action_flashcards_sub">Закрепите термины с интервальным повторением</string>
+    <string name="lesson_goals_title">Что я хочу выучить?</string>
+    <string name="lesson_goals_add">Добавить цель</string>
+
+    <string name="test_title">Тест</string>
+    <string name="test_progress">%1$d / %2$d ответов</string>
+    <string name="test_submit">Отправить ответы</string>
+    <string name="test_preparing">Готовим тест…</string>
+    <string name="test_no_questions">Тест для урока не создан. Свяжитесь с преподавателем.</string>
+    <string name="test_score_label">%1$d / %2$d верно</string>
+    <string name="test_correct_answer">Правильный ответ: %1$s) %2$s</string>
+    <string name="test_view_terms">Посмотреть термины</string>
+    <string name="test_celebrate_great">Отличный результат!</string>
+    <string name="test_celebrate_good">Хорошо, продолжайте!</string>
+    <string name="test_celebrate_try">Попробуйте ещё раз</string>
+    <string name="test_review_again">Переработать</string>
+
+    <string name="terms_title">Ключевые термины</string>
+    <string name="terms_loading">Загружаем термины…</string>
+    <string name="terms_empty">Термины для урока не найдены.</string>
+    <string name="terms_ask_question">Задать вопрос</string>
+    <string name="flashcards_title">Карточки</string>
+    <string name="flashcards_show_answer">Показать ответ</string>
+    <string name="flashcards_again">Снова</string>
+    <string name="flashcards_hard">Сложно</string>
+    <string name="flashcards_good">Хорошо</string>
+    <string name="flashcards_easy">Легко</string>
+    <string name="flashcards_done">Сегодняшнее повторение завершено 🎉</string>
+    <string name="flashcards_done_sub">Просмотрено: %1$d терминов</string>
+    <string name="flashcards_due_count">К повторению: %1$d</string>
+    <string name="flashcards_empty">Карточек пока нет. Сначала откройте термины урока.</string>
+
+    <string name="chat_title">Чат с ментором</string>
+    <string name="chat_input_placeholder">Напишите вопрос…</string>
+    <string name="chat_send">Отправить</string>
+    <string name="chat_voice">Голосовой вопрос</string>
+    <string name="chat_attach">Прикрепить фото</string>
+    <string name="chat_empty_title">Eyeziyo Mentor готов</string>
+    <string name="chat_empty_sub">Спросите по теме урока — ИИ ответит, опираясь на материал</string>
+    <string name="chat_quick_explain">Объясни тему кратко</string>
+    <string name="chat_quick_example">Приведи пример</string>
+    <string name="chat_quick_quiz">Задай мне 3 вопроса</string>
+    <string name="chat_copy">Копировать</string>
+    <string name="chat_copied">Скопировано</string>
+    <string name="chat_scroll_bottom">Вниз</string>
+    <string name="chat_voice_listening">Слушаю…</string>
+    <string name="chat_voice_unavailable">Распознавание голоса недоступно</string>
+
+    <string name="stats_title">Статистика</string>
+    <string name="stats_avg">Средний балл</string>
+    <string name="stats_lessons_done">Уроков пройдено</string>
+    <string name="stats_streak">Текущая серия</string>
+    <string name="stats_best_subject">Сильнее всего</string>
+    <string name="stats_weak_subject">Подтянуть</string>
+    <string name="stats_week_trend">Динамика за неделю</string>
+    <string name="stats_subject_breakdown">По предметам</string>
+    <string name="stats_no_data">Пока нет данных. Пройдите несколько уроков.</string>
+
+    <string name="profile_title">Профиль</string>
+    <string name="profile_groups">Группы</string>
+    <string name="profile_achievements">Достижения</string>
+    <string name="profile_settings">Настройки</string>
+    <string name="profile_logout">Выйти</string>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_notifications">Уведомления</string>
+    <string name="settings_notif_streak">Напоминание о серии</string>
+    <string name="settings_notif_review">Напоминание о повторении</string>
+    <string name="settings_biometric">Биометрия</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_version">Версия: %1$s</string>
+
+    <string name="ach_title">Достижения</string>
+    <string name="ach_locked">Закрыто</string>
+    <string name="ach_unlocked">Получено</string>
+    <string name="ach_progress">%1$d / %2$d</string>
+
+    <string name="daily_title">Сегодняшняя практика</string>
+    <string name="daily_intro">5 вопросов — из слабых тем</string>
+    <string name="daily_empty">Недостаточно вопросов. Сначала пройдите несколько уроков.</string>
+
+    <string name="common_back">Назад</string>
+    <string name="common_retry">Повторить</string>
+    <string name="common_loading">Загрузка…</string>
+    <string name="common_error">Произошла ошибка</string>
+    <string name="common_offline">Нет интернета. Показаны сохранённые данные.</string>
+    <string name="common_save">Сохранить</string>
+    <string name="common_cancel">Отмена</string>
+    <string name="common_continue">Продолжить</string>
+    <string name="common_done">Готово</string>
+    <string name="common_yes">Да</string>
+    <string name="common_no">Нет</string>
+</resources>
