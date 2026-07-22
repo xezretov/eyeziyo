@@ -881,7 +881,7 @@ async function handleRefresh(request: Request, env: Env): Promise<Response> {
 
 const HEMIS_SYNC_SCOPES = new Set<SyncScope>([
   "departments", "specialties", "subjects", "groups",
-  "teachers", "students", "assignments", "structure",
+  "teachers", "students", "assignments", "courses", "structure",
 ]);
 
 /** Verify a HEMIS SSO token and log the student into eyeziyo. */

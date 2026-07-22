@@ -62,10 +62,11 @@
 
       <div class="hs-card">
         <div class="card-title" style="margin-bottom:6px">Sinxronlash</div>
-        <div class="card-subtitle" style="margin-bottom:12px">Avval <strong>Struktura</strong>ni yuklang (fakultet → yo'nalish → fan → guruh → o'qituvchi), so'ng talaba va tayinlashlarni.</div>
+        <div class="card-subtitle" style="margin-bottom:12px">Tartib bilan yuklang: <strong>Struktura</strong> (fakultet → yo'nalish → fan → guruh → o'qituvchi) → <strong>Talabalar</strong> → <strong>Kurslar</strong> (talabalardan keyin) → <strong>Tayinlashlar</strong>.</div>
         <div class="hs-btns">
           <button class="btn-primary" data-scope="structure">Struktura</button>
           <button class="btn-secondary" data-scope="students">Talabalar</button>
+          <button class="btn-secondary" data-scope="courses">Kurslar</button>
           <button class="btn-secondary" data-scope="assignments">Tayinlashlar</button>
         </div>
         <div class="error" id="hs-error" style="margin-top:12px"></div>
@@ -142,14 +143,14 @@
       err.classList.remove("show");
       setBusy(true);
       try {
-        if (scope === "structure") {
-          log("Struktura sinxroni boshlandi…");
+        if (scope === "structure" || scope === "courses") {
+          log(`${scope} sinxroni boshlandi…`);
           const d = await api("/api/admin/hemis/sync", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ scope }),
           });
           for (const r of d.results) log(`  ${r.entity}: jami ${r.total}, yangi ${r.inserted}, yangilandi ${r.updated}`);
-          log("Struktura tayyor.");
+          log(`${scope} tayyor.`);
         } else {
           // Paginated scopes — loop until done.
           log(`${scope} sinxroni boshlandi…`);
