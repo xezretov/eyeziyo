@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Eyeziyo — HEMIS sinxron</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .hs-wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+    .hs-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .hs-head img { width: 38px; height: 38px; }
+    .hs-head h1 { font-size: 22px; font-weight: 700; margin: 0; }
+    .hs-sub { color: var(--text-subtle); font-size: 14px; margin-bottom: 24px; }
+    .hs-back { font-size: 13px; color: var(--brand); text-decoration: none; }
+    .hs-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 18px; }
+    .hs-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .hs-chip { font-size: 12px; background: var(--bg-subtle); color: var(--text-subtle); padding: 4px 10px; border-radius: 999px; }
+    .hs-chip strong { color: var(--text); }
+    .hs-chip.ok strong { color: var(--success); }
+    .hs-chip.bad strong { color: var(--danger); }
+    .hs-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+    .hs-btns .btn-primary, .hs-btns .btn-secondary { height: 40px; }
+    table.hs-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    table.hs-tbl th, table.hs-tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    table.hs-tbl th { color: var(--text-subtle); font-weight: 600; }
+    .hs-log { background: var(--bg-subtle); border-radius: var(--radius); padding: 14px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; max-height: 340px; overflow-y: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .hs-spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(127,127,127,.35); border-top-color: var(--brand); border-radius: 50%; animation: hsspin .7s linear infinite; vertical-align: -3px; margin-right: 7px; }
+    @keyframes hsspin { to { transform: rotate(360deg); } }
+    .hs-hidden { display: none !important; }
+    .hs-warn { background: var(--warning-50); color: var(--warning); border-radius: var(--radius); padding: 12px 14px; font-size: 13.5px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="hs-wrap">
+    <div class="hs-head">
+      <img src="/logo_eyeziyo.png" alt="">
+      <h1>HEMIS sinxron</h1>
+    </div>
+    <div class="hs-sub">Universitet strukturasi, o'qituvchilar, talabalar va tayinlashlarni HEMIS'dan olib keladi (bir tomonlama: HEMIS → eyeziyo). · <a class="hs-back" href="/">← Admin panel</a></div>
+
+    <!-- LOGIN -->
+    <div id="login-card" class="hs-card hs-hidden">
+      <div class="card-title" style="margin-bottom:14px">Administrator sifatida kiring</div>
+      <form id="login-form">
+        <label class="field"><span class="label">Email</span><input type="email" name="email" required placeholder="siz@muassasa.uz" autocomplete="username"></label>
+        <label class="field"><span class="label">Parol</span><input type="password" name="password" required placeholder="••••••••" autocomplete="current-password"></label>
+        <div class="error" id="login-error"></div>
+        <button type="submit" class="btn-primary" id="login-btn" style="width:100%;height:42px">Kirish</button>
+      </form>
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="hs-hidden">
+      <div class="hs-card">
+        <div class="card-title" style="margin-bottom:12px">Holat</div>
+        <div id="hs-status" class="hs-meta"><span class="hs-chip">Yuklanmoqda…</span></div>
+        <div id="hs-status-warn"></div>
+      </div>
+
+      <div class="hs-card">
+        <div class="card-title" style="margin-bottom:6px">Sinxronlash</div>
+        <div class="card-subtitle" style="margin-bottom:12px">Avval <strong>Struktura</strong>ni yuklang (fakultet → yo'nalish → fan → guruh → o'qituvchi), so'ng talaba va tayinlashlarni.</div>
+        <div class="hs-btns">
+          <button class="btn-primary" data-scope="structure">Struktura</button>
+          <button class="btn-secondary" data-scope="students">Talabalar</button>
+          <button class="btn-secondary" data-scope="assignments">Tayinlashlar</button>
+        </div>
+        <div class="error" id="hs-error" style="margin-top:12px"></div>
+      </div>
+
+      <div class="hs-card">
+        <div class="card-title" style="margin-bottom:10px">Jurnal</div>
+        <div id="hs-log" class="hs-log">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script>
+    const API = window.EYEZIYO_API_BASE;
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("eyeziyo_theme") || "light");
+
+    const $ = (id) => document.getElementById(id);
+    const loginCard = $("login-card"), app = $("app");
+    function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function token() { return localStorage.getItem("eyeziyo_token"); }
+    function showLogin() { loginCard.classList.remove("hs-hidden"); app.classList.add("hs-hidden"); }
+    function showApp() { loginCard.classList.add("hs-hidden"); app.classList.remove("hs-hidden"); }
+
+    let logLines = [];
+    function log(msg) {
+      const t = new Date().toLocaleTimeString();
+      logLines.push(`[${t}] ${msg}`);
+      const el = $("hs-log");
+      el.textContent = logLines.join("\n");
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function fmtTs(sec) { return sec ? new Date(sec * 1000).toLocaleString() : "—"; }
+
+    async function api(path, opts = {}) {
+      const r = await fetch(API + path, {
+        ...opts,
+        headers: { Authorization: "Bearer " + token(), ...(opts.headers || {}) },
+      });
+      if (r.status === 401) { localStorage.removeItem("eyeziyo_token"); showLogin(); throw new Error("Sessiya tugagan, qayta kiring"); }
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || ("HTTP " + r.status));
+      return d;
+    }
+
+    async function loadStatus() {
+      const box = $("hs-status"), warn = $("hs-status-warn");
+      warn.innerHTML = "";
+      try {
+        const s = await api("/api/admin/hemis/status");
+        const chips = [];
+        chips.push(`<span class="hs-chip ${s.configured ? "ok" : "bad"}">API token: <strong>${s.configured ? "bor" : "yo'q"}</strong></span>`);
+        chips.push(`<span class="hs-chip ${s.sso_configured ? "ok" : "bad"}">SSO secret: <strong>${s.sso_configured ? "bor" : "yo'q"}</strong></span>`);
+        chips.push(`<span class="hs-chip">Muassasa: <strong>${esc(s.institution ? s.institution.name : "—")}</strong></span>`);
+        chips.push(`<span class="hs-chip">Oxirgi sinxron: <strong>${fmtTs(s.institution && s.institution.hemis_synced_at)}</strong></span>`);
+        box.innerHTML = chips.join("");
+        if (!s.configured) warn.innerHTML = `<div class="hs-warn">HEMIS_API_TOKEN sozlanmagan. Server tomonda <code>wrangler secret put HEMIS_API_TOKEN</code> bilan qo'shing.</div>`;
+        if (s.sync_state && s.sync_state.length) {
+          const rows = s.sync_state.map(r => `<tr><td>${esc(r.entity)}</td><td>${r.total_count ?? 0}</td><td>${fmtTs(r.synced_at)}</td></tr>`).join("");
+          warn.innerHTML += `<table class="hs-tbl" style="margin-top:14px"><thead><tr><th>Entity</th><th>Jami</th><th>Sinxron vaqti</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+      } catch (ex) {
+        box.innerHTML = `<span class="hs-chip bad">Xatolik: <strong>${esc(ex.message)}</strong></span>`;
+      }
+    }
+
+    function setBusy(busy) {
+      document.querySelectorAll("[data-scope]").forEach(b => { b.disabled = busy; });
+    }
+
+    async function syncScope(scope) {
+      const err = $("hs-error");
+      err.classList.remove("show");
+      setBusy(true);
+      try {
+        if (scope === "structure") {
+          log("Struktura sinxroni boshlandi…");
+          const d = await api("/api/admin/hemis/sync", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scope }),
+          });
+          for (const r of d.results) log(`  ${r.entity}: jami ${r.total}, yangi ${r.inserted}, yangilandi ${r.updated}`);
+          log("Struktura tayyor.");
+        } else {
+          // Paginated scopes — loop until done.
+          log(`${scope} sinxroni boshlandi…`);
+          let page = 1, done = false, totalNew = 0;
+          while (!done) {
+            const d = await api("/api/admin/hemis/sync", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ scope, page }),
+            });
+            const r = d.results[0];
+            totalNew += r.inserted;
+            log(`  sahifa ${r.page}/${r.page_count} — yangi ${r.inserted}, yangilandi ${r.updated} (jami ${r.total})`);
+            done = r.done;
+            page = (r.page || page) + 1;
+          }
+          log(`${scope} tayyor. Jami yangi: ${totalNew}.`);
+        }
+        await loadStatus();
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.add("show");
+        log("XATOLIK: " + ex.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    document.querySelectorAll("[data-scope]").forEach(b => {
+      b.addEventListener("click", () => syncScope(b.dataset.scope));
+    });
+
+    // ── Auth bootstrap: reuse the admin-panel token if present ──
+    async function init() {
+      if (!token()) { showLogin(); return; }
+      try {
+        const me = await fetch(API + "/api/users/me", { headers: { Authorization: "Bearer " + token() } });
+        if (!me.ok) throw new Error();
+        const u = await me.json();
+        if (u.role !== "admin") { localStorage.removeItem("eyeziyo_token"); showLogin(); return; }
+        showApp();
+        loadStatus();
+      } catch { showLogin(); }
+    }
+
+    $("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = $("login-error"), btn = $("login-btn"), f = e.target;
+      err.classList.remove("show"); btn.disabled = true; btn.textContent = "Kirilmoqda...";
+      try {
+        const r = await fetch(API + "/api/auth/login", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: f.email.value.trim(), password: f.password.value }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || "Kirish xatosi");
+        localStorage.setItem("eyeziyo_token", d.access_token);
+        const me = await (await fetch(API + "/api/users/me", { headers: { Authorization: "Bearer " + d.access_token } })).json();
+        if (me.role !== "admin") { localStorage.removeItem("eyeziyo_token"); throw new Error("Faqat administrator kirishi mumkin"); }
+        showApp();
+        loadStatus();
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.add("show");
+      } finally {
+        btn.disabled = false; btn.textContent = "Kirish";
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

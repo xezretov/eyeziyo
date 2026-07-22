@@ -5,6 +5,7 @@
  *   POST /api/auth/login
  *   POST /api/auth/register
  *   POST /api/auth/refresh
+ *   POST /api/auth/hemis-sso
  *   GET  /api/users/me
  *   GET  /api/lessons
  *   POST /api/lessons
@@ -14,6 +15,8 @@
  *   GET  /api/admin/stats
  *   GET  /api/admin/teachers/:id/detail
  *   PUT  /api/admin/teachers/:id/groups
+ *   GET  /api/admin/hemis/status
+ *   POST /api/admin/hemis/sync
  *   GET  /ws/transcribe (WebSocket → Durable Object)
  *   GET  /health
  */
@@ -44,6 +47,9 @@ import {
   handleEvalQuestionResults,
 } from "./admin-eval";
 import { handleAiAsk, handleAiTts, handleAiStt } from "./ai-assistant";
+import { hemisConfigured, ssoConfigured, HemisError } from "./hemis-client";
+import { runSync, SyncScope } from "./hemis-sync";
+import { resolveSsoUser } from "./hemis-sso";
 
 export { RecordingSession };
 
@@ -53,6 +59,10 @@ interface Env {
   JWT_SECRET: string;
   DB: D1Database;
   RECORDING_SESSION: DurableObjectNamespace;
+  // HEMIS integration (optional). Base URL is a var; token/secret are secrets.
+  HEMIS_BASE_URL?: string;
+  HEMIS_API_TOKEN?: string;
+  HEMIS_SSO_SECRET?: string;
 }
 
 // ── CORS ──
@@ -225,6 +235,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         const rl = await checkRateLimit(env.DB, clientKey(request, "refresh"), 30, 60);
         if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
         return handleRefresh(request, env);
+      }
+      if (path === "/api/auth/hemis-sso" && method === "POST") {
+        const rl = await checkRateLimit(env.DB, clientKey(request, "hemis-sso"), 10, 60);
+        if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
+        return handleHemisSso(request, env);
       }
 
       // ── User ──
@@ -547,6 +562,21 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return handleGeminiTest(request, env);
       }
 
+      // ── Admin: HEMIS integration (status + one-way sync) ──
+      if (path === "/api/admin/hemis/status" && method === "GET") {
+        const [admin, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        return handleHemisStatus(admin, env);
+      }
+      if (path === "/api/admin/hemis/sync" && method === "POST") {
+        const [admin, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        // Sync is expensive (many HEMIS subrequests + D1 writes) — keep it slow.
+        const rl = await checkRateLimit(env.DB, `hemis-sync:${admin.id}`, 30, 60);
+        if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
+        return handleHemisSync(request, admin, env);
+      }
+
       // ── WebSocket (Durable Object) ──
       if (path === "/ws/transcribe") {
         // Authenticate the WS upgrade. Prefer the Authorization header — the
@@ -845,6 +875,90 @@ async function handleRefresh(request: Request, env: Env): Promise<Response> {
 
   const tokens = await issueTokens(env, user);
   return json(tokens);
+}
+
+// ── HEMIS integration handlers ──
+
+const HEMIS_SYNC_SCOPES = new Set<SyncScope>([
+  "departments", "specialties", "subjects", "groups",
+  "teachers", "students", "assignments", "structure",
+]);
+
+/** Verify a HEMIS SSO token and log the student into eyeziyo. */
+async function handleHemisSso(request: Request, env: Env): Promise<Response> {
+  if (!ssoConfigured(env)) return json({ detail: "HEMIS SSO sozlanmagan" }, 503);
+  let token: unknown;
+  try {
+    ({ token } = (await request.json()) as any);
+  } catch {
+    return json({ detail: "Noto'g'ri so'rov" }, 400);
+  }
+  if (typeof token !== "string" || !token.trim()) {
+    return json({ detail: "SSO token kerak" }, 400);
+  }
+  try {
+    const user = await resolveSsoUser(env, token.trim());
+    const tokens = await issueTokens(env, user);
+    return json(tokens);
+  } catch (e: any) {
+    if (e instanceof HemisError) return json({ detail: e.message }, e.status);
+    console.error("HEMIS SSO error:", e);
+    return json({ detail: "SSO kirishda xatolik" }, 500);
+  }
+}
+
+/** Report HEMIS config presence + per-entity sync state for the admin's institution. */
+async function handleHemisStatus(admin: any, env: Env): Promise<Response> {
+  const instId = admin.institution_id;
+  const inst = instId
+    ? await env.DB.prepare("SELECT id, name, type, hemis_synced_at FROM institutions WHERE id = ?").bind(instId).first<any>()
+    : null;
+  const state = instId
+    ? (await env.DB.prepare(
+        "SELECT entity, last_page, total_count, synced_at FROM hemis_sync_state WHERE institution_id = ?"
+      ).bind(instId).all()).results
+    : [];
+  return json({
+    configured: hemisConfigured(env),
+    sso_configured: ssoConfigured(env),
+    base_url: env.HEMIS_BASE_URL || "https://student.atmu.uz/rest",
+    institution: inst,
+    sync_state: state,
+  });
+}
+
+/**
+ * Trigger a HEMIS -> eyeziyo sync step. Body: { scope, page? }.
+ * Small scopes (or `structure`) complete in one call; `students`/`assignments`
+ * process one page and return `done`/`page_count` so the client can loop.
+ */
+async function handleHemisSync(request: Request, admin: any, env: Env): Promise<Response> {
+  if (!hemisConfigured(env)) return json({ detail: "HEMIS_API_TOKEN sozlanmagan" }, 503);
+  if (!admin.institution_id) return json({ detail: "Muassasa sozlanmagan", code: "NO_INSTITUTION" }, 409);
+
+  let scope: unknown, page: unknown;
+  try {
+    ({ scope, page } = (await request.json()) as any);
+  } catch {
+    return json({ detail: "Noto'g'ri so'rov" }, 400);
+  }
+  if (typeof scope !== "string" || !HEMIS_SYNC_SCOPES.has(scope as SyncScope)) {
+    return json({ detail: "Noto'g'ri scope" }, 400);
+  }
+  const pageNum = Math.max(1, parseInt(String(page ?? 1), 10) || 1);
+
+  try {
+    const results = await runSync(env as any, admin.institution_id, scope as SyncScope, pageNum);
+    if (scope !== "students" && scope !== "assignments") {
+      await env.DB.prepare("UPDATE institutions SET hemis_synced_at = ? WHERE id = ?")
+        .bind(Math.floor(Date.now() / 1000), admin.institution_id).run();
+    }
+    return json({ scope, results });
+  } catch (e: any) {
+    if (e instanceof HemisError) return json({ detail: e.message }, e.status);
+    console.error("HEMIS sync error:", e);
+    return json({ detail: e?.message || "Sinxronlashda xatolik" }, 500);
+  }
 }
 
 async function handleGetLessons(request: Request, env: Env): Promise<Response> {
