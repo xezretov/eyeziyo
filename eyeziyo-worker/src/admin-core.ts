@@ -161,29 +161,55 @@ export async function handleListHierarchy(request: Request, admin: any, env: Env
     return result;
   };
 
+  // Per-node direct counts computed with 3 set-based GROUP BY queries (instead of
+  // 3 queries per row) so large institutions don't fan out into hundreds of
+  // sequential D1 calls. Transitive totals are rolled up over descendants in JS.
+  const groupByNode: Record<number, number> = {};
+  const studentByNode: Record<number, number> = {};
+  const teacherByNode: Record<number, number> = {};
+
+  const gAgg = await env.DB.prepare(
+    `SELECT parent_node_id AS nid, COUNT(*) AS c
+     FROM groups_v2
+     WHERE institution_id = ? AND parent_node_id IS NOT NULL
+     GROUP BY parent_node_id`
+  ).bind(instId).all();
+  for (const r of gAgg.results as any[]) groupByNode[r.nid as number] = Number(r.c || 0);
+
+  const sAgg = await env.DB.prepare(
+    `SELECT g.parent_node_id AS nid, COUNT(DISTINCT sg.student_id) AS c
+     FROM student_groups sg
+     JOIN groups_v2 g ON sg.group_id = g.id
+     WHERE g.institution_id = ? AND g.parent_node_id IS NOT NULL
+     GROUP BY g.parent_node_id`
+  ).bind(instId).all();
+  for (const r of sAgg.results as any[]) studentByNode[r.nid as number] = Number(r.c || 0);
+
+  const tAgg = await env.DB.prepare(
+    `SELECT g.parent_node_id AS nid, COUNT(DISTINCT tg.teacher_id) AS c
+     FROM teacher_groups tg
+     JOIN groups_v2 g ON tg.group_id = g.id
+     WHERE g.institution_id = ? AND g.parent_node_id IS NOT NULL
+     GROUP BY g.parent_node_id`
+  ).bind(instId).all();
+  for (const r of tAgg.results as any[]) teacherByNode[r.nid as number] = Number(r.c || 0);
+
   const enriched = [];
   for (const r of rows.results as any[]) {
-    const descIds = descendantIds(r.id);
-    const placeholders = descIds.map(() => "?").join(",");
-    const gRow = await env.DB.prepare(
-      `SELECT COUNT(*) as c FROM groups_v2 WHERE parent_node_id IN (${placeholders})`
-    ).bind(...descIds).first();
-    const sRow = await env.DB.prepare(
-      `SELECT COUNT(DISTINCT sg.student_id) as c FROM student_groups sg
-       JOIN groups_v2 g ON sg.group_id = g.id
-       WHERE g.parent_node_id IN (${placeholders})`
-    ).bind(...descIds).first();
-    const tRow = await env.DB.prepare(
-      `SELECT COUNT(DISTINCT tg.teacher_id) as c FROM teacher_groups tg
-       JOIN groups_v2 g ON tg.group_id = g.id
-       WHERE g.parent_node_id IN (${placeholders})`
-    ).bind(...descIds).first();
+    let groupCount = 0;
+    let studentCount = 0;
+    let teacherCount = 0;
+    for (const id of descendantIds(r.id)) {
+      groupCount += groupByNode[id] || 0;
+      studentCount += studentByNode[id] || 0;
+      teacherCount += teacherByNode[id] || 0;
+    }
     enriched.push({
       ...r,
       meta: safeJson(r.meta, {}),
-      group_count: Number(gRow?.c || 0),
-      student_count: Number(sRow?.c || 0),
-      teacher_count: Number(tRow?.c || 0),
+      group_count: groupCount,
+      student_count: studentCount,
+      teacher_count: teacherCount,
     });
   }
 
