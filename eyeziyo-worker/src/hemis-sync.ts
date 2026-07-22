@@ -224,7 +224,9 @@ export async function syncTeachers(env: SyncEnv, instId: number): Promise<SyncRe
   for (const e of all) {
     const name = e.full_name || e.short_name || `Employee ${e.id}`;
     const avatar = (name.trim().charAt(0) || "?").toUpperCase();
-    const email = `emp-${e.employee_id_number || e.id}@hemis.local`;
+    // HEMIS entity id is the stable unique key; employee_id_number can be empty
+    // or shared across employees, which caused email collisions + dropped rows.
+    const email = `emp-${e.id}@hemis.local`;
     const rowId = existing.get(e.id);
     if (rowId) {
       stmts.push(env.DB.prepare(
@@ -263,7 +265,7 @@ export async function syncStudents(env: SyncEnv, instId: number, page: number): 
   for (const s of pg.items) {
     const name = s.full_name || s.short_name || `Student ${s.id}`;
     const avatar = (name.trim().charAt(0) || "?").toUpperCase();
-    const email = `stu-${s.student_id_number || s.id}@hemis.local`;
+    const email = `stu-${s.id}@hemis.local`;
     const rowId = existing.get(s.id);
     if (rowId) {
       stmts.push(env.DB.prepare(
