@@ -322,9 +322,11 @@ export class RecordingSession {
     ws.send(JSON.stringify({
       type: "evaluation",
       overall_score: evaluation.overall_score,
-      clarity_score: evaluation.clarity_score,
-      engagement_score: evaluation.engagement_score,
-      content_score: evaluation.content_score,
+      topic_score: evaluation.topic_score,
+      speech_score: evaluation.speech_score,
+      method_score: evaluation.method_score,
+      interaction_score: evaluation.interaction_score,
+      feedback_score: evaluation.feedback_score,
       summary: evaluation.summary,
       strengths: evaluation.strengths,
       improvements: evaluation.improvements,
@@ -383,14 +385,16 @@ export class RecordingSession {
     if (lessonId) {
       await db.prepare(`
         INSERT OR REPLACE INTO evaluations
-        (lesson_id, overall_score, clarity_score, engagement_score, content_score, summary, strengths, improvements, advice)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (lesson_id, overall_score, topic_score, speech_score, method_score, interaction_score, feedback_score, summary, strengths, improvements, advice)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         lessonId,
         evaluation.overall_score,
-        evaluation.clarity_score,
-        evaluation.engagement_score,
-        evaluation.content_score,
+        evaluation.topic_score,
+        evaluation.speech_score,
+        evaluation.method_score,
+        evaluation.interaction_score,
+        evaluation.feedback_score,
         evaluation.summary,
         JSON.stringify(evaluation.strengths),
         JSON.stringify(evaluation.improvements),

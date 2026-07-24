@@ -21,11 +21,13 @@ data class StoredLesson(
     val durationSeconds: Int = 0,
     val transcript: String = "",
     val status: String = "completed", // "completed", "processing", "error"
-    // Evaluation results
+    // Evaluation results (5 mezon, har biri 0-20; overallScore = yig'indi 0-100)
     val overallScore: Int = 0,
-    val clarityScore: Int = 0,
-    val engagementScore: Int = 0,
-    val contentScore: Int = 0,
+    val topicScore: Int = 0,        // Mavzu mosligi va ilmiy terminologiya
+    val speechScore: Int = 0,       // Nutq maqsadliligi va akademik tozalik
+    val methodScore: Int = 0,       // Metodik mahorat va tushuntirish uslubi
+    val interactionScore: Int = 0,  // Interaktivlik va talabalar qamrovi
+    val feedbackScore: Int = 0,     // Baholash va teskari aloqa (Feedback)
     val summary: String = "",
     val strengths: List<String> = emptyList(),
     val improvements: List<String> = emptyList(),
@@ -181,9 +183,11 @@ class LessonRepository(context: Context) {
     fun updateLessonEvaluation(
         lessonId: String,
         overallScore: Int,
-        clarityScore: Int,
-        engagementScore: Int,
-        contentScore: Int,
+        topicScore: Int,
+        speechScore: Int,
+        methodScore: Int,
+        interactionScore: Int,
+        feedbackScore: Int,
         summary: String,
         strengths: List<String>,
         improvements: List<String>,
@@ -198,9 +202,11 @@ class LessonRepository(context: Context) {
 
         val updated = lesson.copy(
             overallScore = overallScore,
-            clarityScore = clarityScore,
-            engagementScore = engagementScore,
-            contentScore = contentScore,
+            topicScore = topicScore,
+            speechScore = speechScore,
+            methodScore = methodScore,
+            interactionScore = interactionScore,
+            feedbackScore = feedbackScore,
             summary = summary,
             strengths = strengths,
             improvements = improvements,
@@ -302,9 +308,11 @@ class LessonRepository(context: Context) {
                 transcript = transcript,
                 status = if (ev != null) "completed" else "pending",
                 overallScore = ev?.overall_score ?: 0,
-                clarityScore = ev?.clarity_score ?: 0,
-                engagementScore = ev?.engagement_score ?: 0,
-                contentScore = ev?.content_score ?: 0,
+                topicScore = ev?.topic_score ?: 0,
+                speechScore = ev?.speech_score ?: 0,
+                methodScore = ev?.method_score ?: 0,
+                interactionScore = ev?.interaction_score ?: 0,
+                feedbackScore = ev?.feedback_score ?: 0,
                 summary = ev?.summary ?: "",
                 strengths = ev?.strengths ?: emptyList(),
                 improvements = ev?.improvements ?: emptyList(),

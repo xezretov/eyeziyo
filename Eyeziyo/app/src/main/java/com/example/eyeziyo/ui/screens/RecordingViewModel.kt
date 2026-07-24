@@ -27,9 +27,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 data class LessonEvaluation(
     val overallScore: Int = 0,
-    val clarityScore: Int = 0,
-    val engagementScore: Int = 0,
-    val contentScore: Int = 0,
+    val topicScore: Int = 0,        // Mavzu mosligi va ilmiy terminologiya (0-20)
+    val speechScore: Int = 0,       // Nutq maqsadliligi va akademik tozalik (0-20)
+    val methodScore: Int = 0,       // Metodik mahorat va tushuntirish uslubi (0-20)
+    val interactionScore: Int = 0,  // Interaktivlik va talabalar qamrovi (0-20)
+    val feedbackScore: Int = 0,     // Baholash va teskari aloqa (Feedback) (0-20)
     val summary: String = "",
     val strengths: List<String> = emptyList(),
     val improvements: List<String> = emptyList(),
@@ -247,9 +249,11 @@ class RecordingViewModel : ViewModel() {
                             }
                             _evaluation.value = LessonEvaluation(
                                 overallScore = json.optInt("overall_score", 0),
-                                clarityScore = json.optInt("clarity_score", 0),
-                                engagementScore = json.optInt("engagement_score", 0),
-                                contentScore = json.optInt("content_score", 0),
+                                topicScore = json.optInt("topic_score", 0),
+                                speechScore = json.optInt("speech_score", 0),
+                                methodScore = json.optInt("method_score", 0),
+                                interactionScore = json.optInt("interaction_score", 0),
+                                feedbackScore = json.optInt("feedback_score", 0),
                                 summary = json.optString("summary", ""),
                                 strengths = jsonArrayToList(json.optJSONArray("strengths")),
                                 improvements = jsonArrayToList(json.optJSONArray("improvements")),

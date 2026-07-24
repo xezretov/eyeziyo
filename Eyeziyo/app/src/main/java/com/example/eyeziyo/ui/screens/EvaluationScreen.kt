@@ -162,15 +162,14 @@ fun EvaluationScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Score breakdown
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ScoreChip("Tushunarlilik", evaluation.clarityScore, Primary, Modifier.weight(1f))
-                        ScoreChip("Jalb qilish", evaluation.engagementScore, Accent, Modifier.weight(1f))
-                        ScoreChip("Kontent", evaluation.contentScore, Emerald600, Modifier.weight(1f))
-                    }
+                    // Score breakdown — 5 mezon, har biri 20 balldan
+                    CriteriaBreakdown(
+                        topicScore = evaluation.topicScore,
+                        speechScore = evaluation.speechScore,
+                        methodScore = evaluation.methodScore,
+                        interactionScore = evaluation.interactionScore,
+                        feedbackScore = evaluation.feedbackScore
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -262,30 +261,68 @@ fun EvaluationScreen(
     }
 }
 
+/**
+ * 5 ta pedagogik mezon bo'yicha ballar taqsimoti. Har bir mezon 20 balldan.
+ * Ham EvaluationScreen, ham LessonDetailScreen shu komponentdan foydalanadi.
+ */
 @Composable
-fun ScoreChip(label: String, score: Int, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.15f))
+fun CriteriaBreakdown(
+    topicScore: Int,
+    speechScore: Int,
+    methodScore: Int,
+    interactionScore: Int,
+    feedbackScore: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        ScoreCriteriaBar("Mavzu mosligi va ilmiy terminologiya", topicScore, Primary)
+        ScoreCriteriaBar("Nutq maqsadliligi va akademik tozalik", speechScore, Accent)
+        ScoreCriteriaBar("Metodik mahorat va tushuntirish uslubi", methodScore, Violet)
+        ScoreCriteriaBar("Interaktivlik va talabalar qamrovi", interactionScore, Mint)
+        ScoreCriteriaBar("Baholash va teskari aloqa (Feedback)", feedbackScore, Peach)
+    }
+}
+
+@Composable
+fun ScoreCriteriaBar(label: String, score: Int, color: Color, max: Int = 20) {
+    val clamped = score.coerceIn(0, max)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "$score",
-                fontSize = 24.sp,
+                label,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                "$clamped/$max",
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(Color.White.copy(alpha = 0.1f))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth((clamped.toFloat() / max).coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(color)
             )
         }
     }

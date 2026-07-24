@@ -757,18 +757,24 @@ teacherGroups.forEach((tg) => {
     lessons.push({ id, teacher: tg.teacher, group: tg.group, subject: tg.subject, daysAgo, created });
     log(`INSERT INTO lessons (id, user_id, group_name, topic, course_type, duration_seconds, transcript, created_at) VALUES (${id}, ${tg.teacher.id}, ${sqlStr(tg.group.name)}, ${sqlStr(topic)}, ${sqlStr(tg.subject.name)}, ${duration}, ${sqlStr(transcript)}, ${sqlStr(created)});`);
 
-    // Evaluation — score distribution favoring 65-90 range
-    const overall = Math.min(100, Math.max(40, Math.round(75 + (Math.random() - 0.5) * 30)));
-    const clarity = Math.min(100, Math.max(40, overall + rand(-8, 8)));
-    const engagement = Math.min(100, Math.max(40, overall + rand(-12, 8)));
-    const content = Math.min(100, Math.max(40, overall + rand(-6, 10)));
+    // Evaluation — 5 pedagogik mezon, har biri 0-20; overall = yig'indi (0-100).
+    // Baza darajani tanlaymiz va har bir mezonni shu atrofida biroz tebratamiz,
+    // shunda ballar taqsimoti 12-18 (60-90) oralig'iga moyil bo'ladi.
+    const clampCrit = (v) => Math.min(20, Math.max(4, v));
+    const base = Math.round(15 + (Math.random() - 0.5) * 7); // ~11..18
+    const topicScore = clampCrit(base + rand(-3, 2));        // Mavzu mosligi va ilmiy terminologiya
+    const speechScore = clampCrit(base + rand(-3, 2));       // Nutq maqsadliligi va akademik tozalik
+    const methodScore = clampCrit(base + rand(-3, 3));       // Metodik mahorat va tushuntirish uslubi
+    const interactionScore = clampCrit(base + rand(-4, 2));  // Interaktivlik va talabalar qamrovi
+    const feedbackScore = clampCrit(base + rand(-4, 2));     // Baholash va teskari aloqa
+    const overall = topicScore + speechScore + methodScore + interactionScore + feedbackScore;
     const tier = overall >= 80 ? "high" : overall >= 60 ? "mid" : "low";
     const summary = pickRand(SUMMARIES[tier]);
     const strengths = pickN(STRENGTHS, rand(2, 3));
     const improvements = pickN(IMPROVEMENTS, rand(2, 3));
     const advice = pickN(ADVICE, rand(2, 3));
 
-    log(`INSERT INTO evaluations (lesson_id, overall_score, clarity_score, engagement_score, content_score, summary, strengths, improvements, advice, created_at) VALUES (${id}, ${overall}, ${clarity}, ${engagement}, ${content}, ${sqlStr(summary)}, ${jsonStr(strengths)}, ${jsonStr(improvements)}, ${jsonStr(advice)}, ${sqlStr(created)});`);
+    log(`INSERT INTO evaluations (lesson_id, overall_score, topic_score, speech_score, method_score, interaction_score, feedback_score, summary, strengths, improvements, advice, created_at) VALUES (${id}, ${overall}, ${topicScore}, ${speechScore}, ${methodScore}, ${interactionScore}, ${feedbackScore}, ${sqlStr(summary)}, ${jsonStr(strengths)}, ${jsonStr(improvements)}, ${jsonStr(advice)}, ${sqlStr(created)});`);
   }
 });
 log(``);

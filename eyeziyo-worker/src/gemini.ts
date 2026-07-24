@@ -413,10 +413,12 @@ JAVOB FAQAT JSON, FAQAT so'zlar ro'yxati (tavsif YO'Q, object YO'Q), 30-50 ta el
 }
 
 export interface LessonEvaluation {
-  overall_score: number;
-  clarity_score: number;
-  engagement_score: number;
-  content_score: number;
+  overall_score: number;      // 5 mezon yig'indisi (0-100)
+  topic_score: number;        // Mavzu mosligi va ilmiy terminologiya (0-20)
+  speech_score: number;       // Nutq maqsadliligi va akademik tozalik (0-20)
+  method_score: number;       // Metodik mahorat va tushuntirish uslubi (0-20)
+  interaction_score: number;  // Interaktivlik va talabalar qamrovi (0-20)
+  feedback_score: number;     // Baholash va teskari aloqa (Feedback) (0-20)
   summary: string;
   strengths: string[];
   improvements: string[];
@@ -431,7 +433,8 @@ export async function evaluateLesson(
   durationMinutes: number
 ): Promise<LessonEvaluation> {
   const empty: LessonEvaluation = {
-    overall_score: 0, clarity_score: 0, engagement_score: 0, content_score: 0,
+    overall_score: 0, topic_score: 0, speech_score: 0, method_score: 0,
+    interaction_score: 0, feedback_score: 0,
     summary: "", strengths: [], improvements: [], advice: [],
   };
   if (!transcript || transcript.length < 20) return empty;
@@ -442,32 +445,36 @@ export async function evaluateLesson(
     ? transcript.slice(0, maxChars * 0.3) + "\n[...]\n" + transcript.slice(-maxChars * 0.3)
     : transcript;
 
-  const prompt = `Sen tajribali ta'lim ekspertisan. Darsni transkript asosida diqqat bilan baholab, maslahatlar ber.
+  const prompt = `Sen tajribali ta'lim ekspertisan. O'qituvchi darsini transkript asosida diqqat bilan baholab, maslahatlar ber.
 
 DARS: ${courseType} · ${topic} · ${durationMinutes} daqiqa
 
 TRANSKRIPT:
 ${processed}
 
-BAHOLASH MEZONLARI (har biri 0 dan 100 gacha BUTUN SON):
-- clarity_score — o'qituvchi nutqi qanchalik tushunarli, mantiqiy tuzilgan
-- engagement_score — o'quvchini jalb qilish, savollar berish, qiziqarli yondashuv
-- content_score — mavzu chuqurligi, aniqlik, misollar sifati
-- overall_score — yuqoridagi uchtasining vaznli o'rtacha qiymati
+BAHOLASH MEZONLARI (har biri 0 dan 20 gacha BUTUN SON):
+- topic_score — Mavzu mosligi va ilmiy terminologiya: dars rejasi/sillabusga mosligi, sohaga oid tayanch kalit so'zlar zichligi va terminlarning to'g'ri kontekstda ishlatilishi.
+- speech_score — Nutq maqsadliligi va akademik tozalik: dars vaqtining faqat ilmga yo'naltirilgani; mavzudan tashqari suhbatlar, shaxsiy hikoyalar, uzoq tanbehlar va parazit so'zlar qancha kam bo'lsa, ball shuncha yuqori.
+- method_score — Metodik mahorat va tushuntirish uslubi: darsning mantiqiy tuzilishi (kirish, asosiy qism, xulosa) va amaliy/hayotiy misollardan foydalanish darajasi.
+- interaction_score — Interaktivlik va talabalar qamrovi: dialog balansi (o'qituvchi/talaba nutqi nisbati) va o'qituvchi bergan savollar soni; monolog emas, faol muloqot.
+- feedback_score — Baholash va teskari aloqa: talaba javoblariga munosabat (rag'batlantirish/xatoni tushuntirish), mustahkamlash savollari va uyga vazifa ko'rsatmalari.
+- overall_score — yuqoridagi 5 mezonning YIG'INDISI (0-100).
 
 QAT'IY:
 - Har bir ballni transkriptda haqiqatan ko'ringan dalillar asosida hisobla.
-- 35 yoki 50 kabi standart "o'rtacha" raqamlardan qochib, real darajaga mos ball qo'y.
-- Kuchli, mazmunli dars uchun 75-95 oralig'i ham kerak bo'lsa qo'y.
-- Zaif yoki bo'sh dars uchun 10-30 oralig'iga tushir.
-${durationMinutes <= 2 ? "- BU JUDA QISQA DARS (≤2 daqiqa) — overall_score va content_score 40 dan oshmasin." : ""}
+- 10 yoki 12 kabi standart "o'rtacha" raqamlardan qochib, real darajaga mos ball qo'y.
+- Kuchli mezon uchun 15-20, zaif mezon uchun 2-8 oralig'iga ham tush.
+- overall_score AYNAN 5 mezon yig'indisiga teng bo'lsin.
+${durationMinutes <= 2 ? "- BU JUDA QISQA DARS (≤2 daqiqa) — har bir mezon 8 dan oshmasin." : ""}
 
 JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qaytar:
 {
-  "overall_score": <0-100 butun son>,
-  "clarity_score": <0-100 butun son>,
-  "engagement_score": <0-100 butun son>,
-  "content_score": <0-100 butun son>,
+  "topic_score": <0-20 butun son>,
+  "speech_score": <0-20 butun son>,
+  "method_score": <0-20 butun son>,
+  "interaction_score": <0-20 butun son>,
+  "feedback_score": <0-20 butun son>,
+  "overall_score": <0-100 butun son (5 mezon yig'indisi)>,
   "summary": "<2-3 gap dars haqida xulosa>",
   "strengths": ["<kuchli tomon 1>", "<kuchli tomon 2>"],
   "improvements": ["<yaxshilash kerak bo'lgan joy 1>", "<yaxshilash kerak bo'lgan joy 2>"],
@@ -483,17 +490,27 @@ JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qa
       cleaned = cleaned.replace(/^```(?:\w+)?\s*/, "").replace(/`+$/, "").trim();
     }
     const data = JSON.parse(cleaned);
-    // Clamp scores to 0..100 — the model occasionally returns out-of-range or
-    // non-numeric values which would otherwise be persisted verbatim.
-    const score = (v: any) => {
+    // Clamp each criterion to 0..20 — the model occasionally returns
+    // out-of-range or non-numeric values which would otherwise be persisted.
+    const crit = (v: any) => {
       const n = Math.round(Number(v));
-      return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
+      return Number.isFinite(n) ? Math.min(20, Math.max(0, n)) : 0;
     };
+    const topic_score = crit(data.topic_score);
+    const speech_score = crit(data.speech_score);
+    const method_score = crit(data.method_score);
+    const interaction_score = crit(data.interaction_score);
+    const feedback_score = crit(data.feedback_score);
+    // overall is always the sum of the 5 criteria so it can never disagree with
+    // the breakdown, regardless of what the model returns for overall_score.
+    const overall_score = topic_score + speech_score + method_score + interaction_score + feedback_score;
     return {
-      overall_score: score(data.overall_score),
-      clarity_score: score(data.clarity_score),
-      engagement_score: score(data.engagement_score),
-      content_score: score(data.content_score),
+      overall_score,
+      topic_score,
+      speech_score,
+      method_score,
+      interaction_score,
+      feedback_score,
       summary: data.summary ?? "",
       strengths: Array.isArray(data.strengths) ? data.strengths : [],
       improvements: Array.isArray(data.improvements) ? data.improvements : [],

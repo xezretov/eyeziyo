@@ -125,15 +125,14 @@ fun LessonDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Score breakdown
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ScoreChip("Tushunarlilik", lesson.clarityScore, Primary, Modifier.weight(1f))
-                    ScoreChip("Jalb qilish", lesson.engagementScore, Accent, Modifier.weight(1f))
-                    ScoreChip("Kontent", lesson.contentScore, Emerald600, Modifier.weight(1f))
-                }
+                // Score breakdown — 5 mezon, har biri 20 balldan
+                CriteriaBreakdown(
+                    topicScore = lesson.topicScore,
+                    speechScore = lesson.speechScore,
+                    methodScore = lesson.methodScore,
+                    interactionScore = lesson.interactionScore,
+                    feedbackScore = lesson.feedbackScore
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
