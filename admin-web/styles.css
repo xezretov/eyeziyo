@@ -1,18 +1,32 @@
 /* ═══════════════════════════════════════════════════════════════
-   Eyeziyo Admin — Professional, minimal, data-dense
-   Sidebar layout · Inter font · Light + Dark · Neutral palette
+   Eyeziyo Admin — Institutional Futurism
+   Refined AI aesthetic for a state university · data-dense
+   Space Grotesk (display) · Inter (body) · JetBrains Mono (data)
+   Aurora accents · glass surfaces · restrained glow · Light + Dark
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Brand */
+  /* Brand — institutional electric blue */
   --brand: #2563EB;
   --brand-600: #1D4ED8;
   --brand-700: #1E40AF;
-  --brand-50: #EFF6FF;
-  --brand-100: #DBEAFE;
+  --brand-50: #EEF3FF;
+  --brand-100: #DBE6FE;
   --accent: #7C3AED;
-  --accent-50: #F5F3FF;
-  --accent-100: #EDE9FE;
+  --accent-50: #F4F2FF;
+  --accent-100: #E9E4FF;
+  --cyan: #0891B2;
+  --cyan-bright: #06B6D4;
+
+  /* Aurora — the signature AI gradient, used sparingly */
+  --aurora: linear-gradient(120deg, #2563EB 0%, #6366F1 45%, #06B6D4 100%);
+  --aurora-soft: linear-gradient(120deg, rgba(37,99,235,0.14), rgba(99,102,241,0.10) 50%, rgba(6,182,212,0.12));
+  --glow-brand: 0 0 0 1px rgba(37,99,235,0.10), 0 8px 24px -8px rgba(37,99,235,0.45);
+
+  /* Fonts */
+  --font-display: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   /* Status */
   --success: #059669;
@@ -28,78 +42,96 @@
   --info: #0891B2;
   --info-50: #ECFEFF;
 
-  /* Neutral (slate) — light mode */
-  --bg: #F8FAFC;
-  --bg-subtle: #F1F5F9;
+  /* Neutral (cool slate) — light mode */
+  --bg: #F4F7FC;
+  --bg-subtle: #EDF1F8;
   --surface: #FFFFFF;
-  --surface-hover: #F8FAFC;
-  --border: #E2E8F0;
-  --border-strong: #CBD5E1;
-  --divider: #F1F5F9;
+  --surface-2: #FBFCFE;      /* subtle elevated tint for gradient surfaces */
+  --surface-hover: #F5F8FD;
+  --border: #E1E8F2;
+  --border-strong: #C6D0E0;
+  --divider: #EEF2F8;
 
-  --text: #0F172A;
+  --text: #0B1220;
   --text-muted: #475569;
   --text-subtle: #5B6675;   /* AA on white (~4.9:1) */
   --text-faint: #717C8C;    /* legible faint (~4.0:1), still clearly secondary */
 
+  /* Page mesh texture strength (behind #app) */
+  --mesh-1: rgba(37, 99, 235, 0.06);
+  --mesh-2: rgba(6, 182, 212, 0.05);
+  --mesh-3: rgba(124, 58, 237, 0.04);
+  --grid-line: rgba(15, 23, 42, 0.028);
+
   /* Shadows */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 40px -8px rgba(15, 23, 42, 0.12);
+  --shadow-md: 0 4px 10px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 24px -6px rgba(15, 23, 42, 0.10), 0 4px 8px -3px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.18);
 
   /* Layout */
-  --sidebar-w: 248px;
+  --sidebar-w: 252px;
   --sidebar-w-collapsed: 68px;
-  --topbar-h: 56px;
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --topbar-h: 58px;
+  --radius-sm: 7px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 
   /* Motion */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark mode */
+/* Dark mode — deep space navy with subtle AI glow */
 [data-theme="dark"] {
-  --bg: #0B1220;
-  --bg-subtle: #111827;
-  --surface: #131B2B;
-  --surface-hover: #1A2338;
-  --border: #1F2A44;
-  --border-strong: #2A3654;
-  --divider: #1A2338;
+  --bg: #060A14;
+  --bg-subtle: #0C1220;
+  --surface: #0E1626;
+  --surface-2: #121C30;
+  --surface-hover: #16223A;
+  --border: #1E2A42;
+  --border-strong: #2B3A58;
+  --divider: #172136;
 
-  --text: #F1F5F9;
-  --text-muted: #CBD5E1;
-  --text-subtle: #94A3B8;
-  --text-faint: #64748B;
+  --text: #EEF3FB;
+  --text-muted: #C3CEDF;
+  --text-subtle: #93A2BC;
+  --text-faint: #6B7A96;
 
-  --brand-50: #1E293B;
-  --brand-100: #1E3A8A;
-  --accent-50: #2A1F4D;
-  --accent-100: #3B2A70;
+  --brand: #3B72F6;
+  --brand-50: #16233F;
+  --brand-100: #1B3568;
+  --accent-50: #221A45;
+  --accent-100: #33266B;
   --success-50: #0D2B22;
   --success-100: #14532D;
   --warning-50: #2D2013;
   --warning-100: #451A03;
   --danger-50: #2D1515;
   --danger-100: #7F1D1D;
-  --danger-600: #EF4444;
+  --danger-600: #F87171;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --aurora: linear-gradient(120deg, #3B72F6 0%, #7C7BFF 45%, #22D3EE 100%);
+  --aurora-soft: linear-gradient(120deg, rgba(59,114,246,0.20), rgba(124,123,255,0.14) 50%, rgba(34,211,238,0.16));
+  --glow-brand: 0 0 0 1px rgba(59,114,246,0.25), 0 10px 30px -8px rgba(59,114,246,0.55);
+
+  --mesh-1: rgba(59, 114, 246, 0.16);
+  --mesh-2: rgba(34, 211, 238, 0.10);
+  --mesh-3: rgba(124, 123, 255, 0.12);
+  --grid-line: rgba(148, 163, 184, 0.05);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 14px 30px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 28px 56px rgba(0, 0, 0, 0.65);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   font-weight: 450;
@@ -110,7 +142,40 @@ html, body {
   font-feature-settings: 'cv11', 'ss01';
 }
 
+/* Ambient AI mesh + fine grid — sits behind everything, very restrained */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px circle at 12% -8%, var(--mesh-1), transparent 45%),
+    radial-gradient(1000px circle at 100% 0%, var(--mesh-2), transparent 42%),
+    radial-gradient(800px circle at 50% 120%, var(--mesh-3), transparent 45%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+}
+
 #app { min-height: 100vh; }
+
+/* Display type for headings */
+h1, h2, h3, .page-title, .card-title, .section-title h2,
+.login-headline, .login-form-card h2, .onboard-header h1,
+.detail-info .name, .modal-head h3, .empty .e-title,
+.big-logo-text, .sidebar-brand .b1 {
+  font-family: var(--font-display);
+}
+
+/* Mono for engineered, tabular data */
+.kpi-value, .hier-count, .pc-stat .v, .gstat-card .gscore,
+.score-chip, .rank-item .v, .rank-item .idx, .donut-row .vl, .donut-row .pc,
+.la-total .v, .la-hero-badge .n, .pagination .info, .pagination .pages button,
+table.data-table td.num, .detail-avatar, .uc-avatar, .cell-person .avatar,
+.pc-avatar, .org-badge {
+  font-family: var(--font-mono);
+}
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
 button { cursor: pointer; background: none; border: none; }
 a { color: var(--brand); text-decoration: none; }
@@ -2540,6 +2605,228 @@ table.data-table th.num { text-align: right; }
 
 /* Avatar subtle sheen */
 .uc-avatar { box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28); }
+
+/* ════════════════════════════════════════════════════════════
+   INSTITUTIONAL FUTURISM LAYER
+   Aurora accents · glass · restrained glow · refined type
+   (loaded last so it wins the cascade)
+   ════════════════════════════════════════════════════════════ */
+
+/* Sharper display headings */
+.page-title { font-size: 23px; font-weight: 600; letter-spacing: -0.5px; }
+.card-title { letter-spacing: -0.1px; }
+.kpi-value { font-weight: 600; letter-spacing: -1px; }
+.hier-count, .pc-stat .v, .gstat-card .gscore, .la-total .v { font-weight: 600; letter-spacing: -0.5px; }
+
+/* Data-header labels read as engineered telemetry */
+table.data-table th,
+.side-section-title {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+table.data-table th { font-size: 10.5px; }
+
+/* ── Sidebar: glass panel + glowing brand mark ── */
+.sidebar {
+  background:
+    linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-right: 1px solid var(--border);
+  position: sticky;
+}
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(37,99,235,0.35), transparent);
+  opacity: 0.6;
+}
+.sidebar-brand img {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(37,99,235,0.18), 0 4px 14px -4px rgba(37,99,235,0.45);
+}
+.sidebar-brand .b1 { font-weight: 600; letter-spacing: -0.3px; }
+
+/* Sidebar active item — aurora-tinted with glow bar */
+.side-item.active {
+  background: linear-gradient(90deg, var(--brand-50), transparent 85%);
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px rgba(37,99,235,0.10);
+}
+[data-theme="dark"] .side-item.active {
+  background: linear-gradient(90deg, rgba(59,114,246,0.20), transparent 85%);
+  color: #A9C2FF;
+}
+.side-item::before {
+  width: 3px;
+  background: var(--aurora);
+  box-shadow: 0 0 8px rgba(37,99,235,0.6);
+}
+.side-item.active::before { height: 62%; }
+
+.org-badge { background: var(--aurora) !important; box-shadow: 0 4px 12px -3px rgba(37,99,235,0.5); }
+
+/* ── Topbar: glass with hairline aurora underline ── */
+.topbar { border-bottom: 1px solid var(--border); }
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.30), rgba(6,182,212,0.24), transparent);
+}
+.topbar-search input:focus {
+  box-shadow: 0 0 0 3px var(--brand-50), 0 0 18px -6px rgba(37,99,235,0.5);
+}
+.uc-avatar { background: var(--aurora); }
+
+/* ── Cards: subtle gradient surface + glow on hover ── */
+.card, .kpi, .gstat-card, .filters-bar, .pagination,
+.lessons-list, .detail-header, .la-card, .person-card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+.card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+
+/* ── KPI cards: engineered metric tiles ── */
+.kpi { position: relative; overflow: hidden; }
+.kpi::before {
+  content: "";
+  position: absolute;
+  top: -40%; right: -20%;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, var(--mesh-1), transparent 68%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.kpi-value { font-size: 28px; }
+.kpi-icon { border-radius: var(--radius); box-shadow: inset 0 0 0 1px rgba(37,99,235,0.06); }
+.kpi-icon.blue   { background: var(--aurora-soft); color: var(--brand); }
+.kpi-clickable:hover { border-color: rgba(37,99,235,0.55); box-shadow: var(--glow-brand); }
+.kpi::after { width: 3px; background: var(--aurora); }
+
+/* ── Buttons: aurora primary with glow ── */
+.btn-primary {
+  background: var(--aurora);
+  background-size: 140% 140%;
+  box-shadow: 0 4px 14px -4px rgba(37,99,235,0.5), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--aurora);
+  background-position: 100% 50%;
+  box-shadow: 0 8px 22px -6px rgba(37,99,235,0.6), inset 0 1px 0 rgba(255,255,255,0.22);
+  transform: translateY(-1px);
+}
+
+/* Score chips + tags a touch tighter for the mono numerals */
+.score-chip { font-weight: 600; letter-spacing: 0.2px; padding: 3px 9px; }
+
+/* Tables: brand-tinted hover, crisp headers */
+table.data-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--brand-50) 60%, var(--surface));
+}
+[data-theme="dark"] table.data-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--brand-50) 55%, var(--surface));
+}
+
+/* Focus rings — branded glow */
+.field input:focus, .field select:focus, .field textarea:focus {
+  box-shadow: 0 0 0 3px var(--brand-50), 0 0 16px -6px rgba(37,99,235,0.55);
+}
+
+/* Person / group chips with brand tint */
+.rank-bar { background: var(--aurora); }
+.progress-fill { box-shadow: 0 0 8px -2px currentColor; }
+
+/* Modal: glass backdrop already blurred; add aurora top edge to modal */
+.modal-card { position: relative; }
+.modal-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--aurora);
+  opacity: 0.8;
+}
+
+/* Detail header: aurora edge */
+.detail-header { position: relative; overflow: hidden; }
+.detail-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+  background: var(--aurora);
+}
+.detail-avatar { background: var(--aurora); box-shadow: 0 8px 20px -6px rgba(37,99,235,0.5); }
+
+/* ════════════════════════════════════════════════════════════
+   LOGIN — futuristic institutional hero
+   ════════════════════════════════════════════════════════════ */
+.login-left {
+  background: linear-gradient(155deg, #060B1A 0%, #0C1834 52%, #071A2E 100%);
+}
+.login-left::before {
+  background-image:
+    radial-gradient(700px circle at 8% 0%, rgba(37,99,235,0.38), transparent 44%),
+    radial-gradient(760px circle at 100% 100%, rgba(6,182,212,0.30), transparent 46%),
+    radial-gradient(620px circle at 60% 40%, rgba(124,92,246,0.22), transparent 50%);
+  animation: login-aurora 16s ease-in-out infinite alternate;
+}
+/* Fine grid overlay on the hero panel */
+.login-left::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at 30% 40%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 0%, transparent 75%);
+  z-index: 0;
+}
+@keyframes login-aurora {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-2%, 2%) scale(1.06); }
+}
+.login-headline { font-size: 40px; font-weight: 600; letter-spacing: -1px; }
+.login-headline .ai-word {
+  background: linear-gradient(90deg, #60A5FA, #22D3EE);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #60A5FA;
+}
+.big-logo-text { font-family: var(--font-display); font-weight: 600; }
+.big-logo img { box-shadow: 0 0 0 1px rgba(96,165,250,0.25), 0 6px 20px -6px rgba(37,99,235,0.6); border-radius: 10px; }
+.login-features .check {
+  background: linear-gradient(135deg, rgba(37,99,235,0.30), rgba(6,182,212,0.24));
+  box-shadow: 0 0 0 1px rgba(96,165,250,0.20);
+}
+.login-form-card h2 { font-weight: 600; letter-spacing: -0.5px; }
+/* Eyebrow tag on hero */
+.login-left-inner::before {
+  content: "AI · TA'LIM ANALITIKASI";
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: #7DD3FC;
+  padding: 6px 12px;
+  margin-bottom: 22px;
+  border-radius: 999px;
+  background: rgba(37,99,235,0.14);
+  border: 1px solid rgba(125,211,252,0.22);
+}
+
+/* Onboarding + type cards inherit aurora selected state */
+.type-card.selected { box-shadow: var(--glow-brand); border-color: var(--brand); }
+.type-card.selected .tc-icon,
+.gp-chip.selected, .sched-day.selected { background: var(--aurora); }
 
 /* ════════════════════════════════════════════════════════════
    REDUCED MOTION — respect OS-level accessibility preference
