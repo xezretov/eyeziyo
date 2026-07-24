@@ -23,6 +23,10 @@
   --aurora-soft: linear-gradient(120deg, rgba(37,99,235,0.14), rgba(99,102,241,0.10) 50%, rgba(6,182,212,0.12));
   --glow-brand: 0 0 0 1px rgba(37,99,235,0.10), 0 8px 24px -8px rgba(37,99,235,0.45);
 
+  /* Uzbek girih ornament — minimal cultural accent (8-pointed star) */
+  --uz-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%232563EB' stroke-opacity='0.22' stroke-width='1'%3E%3Crect x='11' y='11' width='22' height='22'/%3E%3Crect x='11' y='11' width='22' height='22' transform='rotate(45 22 22)'/%3E%3Cline x1='0' y1='22' x2='11' y2='22'/%3E%3Cline x1='33' y1='22' x2='44' y2='22'/%3E%3C/g%3E%3C/svg%3E");
+  --uz-medallion: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%237DD3FC' stroke-opacity='0.16' stroke-width='1.4'%3E%3Crect x='55' y='55' width='110' height='110'/%3E%3Crect x='55' y='55' width='110' height='110' transform='rotate(45 110 110)'/%3E%3Ccircle cx='110' cy='110' r='34'/%3E%3Ccircle cx='110' cy='110' r='58'/%3E%3C/g%3E%3C/svg%3E");
+
   /* Fonts */
   --font-display: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -115,6 +119,8 @@
   --aurora: linear-gradient(120deg, #3B72F6 0%, #7C7BFF 45%, #22D3EE 100%);
   --aurora-soft: linear-gradient(120deg, rgba(59,114,246,0.20), rgba(124,123,255,0.14) 50%, rgba(34,211,238,0.16));
   --glow-brand: 0 0 0 1px rgba(59,114,246,0.25), 0 10px 30px -8px rgba(59,114,246,0.55);
+
+  --uz-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%2393B4E8' stroke-opacity='0.20' stroke-width='1'%3E%3Crect x='11' y='11' width='22' height='22'/%3E%3Crect x='11' y='11' width='22' height='22' transform='rotate(45 22 22)'/%3E%3Cline x1='0' y1='22' x2='11' y2='22'/%3E%3Cline x1='33' y1='22' x2='44' y2='22'/%3E%3C/g%3E%3C/svg%3E");
 
   --mesh-1: rgba(59, 114, 246, 0.16);
   --mesh-2: rgba(34, 211, 238, 0.10);
@@ -2668,6 +2674,20 @@ table.data-table th { font-size: 10.5px; }
 
 .org-badge { background: var(--aurora) !important; box-shadow: 0 4px 12px -3px rgba(37,99,235,0.5); }
 
+/* Uzbek girih band — a thin ornamental divider atop the sidebar footer */
+.sidebar-footer { position: relative; }
+.sidebar-footer::before {
+  content: "";
+  position: absolute;
+  left: 14px; right: 14px; top: -1px;
+  height: 22px;
+  background: var(--uz-band) repeat-x center / 22px 22px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  pointer-events: none;
+}
+.shell.collapsed .sidebar-footer::before { display: none; }
+
 /* ── Topbar: glass with hairline aurora underline ── */
 .topbar { border-bottom: 1px solid var(--border); }
 .topbar::after {
@@ -2765,7 +2785,9 @@ table.data-table tbody tr:hover td {
    LOGIN — futuristic institutional hero
    ════════════════════════════════════════════════════════════ */
 .login-left {
-  background: linear-gradient(155deg, #060B1A 0%, #0C1834 52%, #071A2E 100%);
+  background:
+    var(--uz-medallion) right -46px bottom -46px / 260px 260px no-repeat,
+    linear-gradient(155deg, #060B1A 0%, #0C1834 52%, #071A2E 100%);
 }
 .login-left::before {
   background-image:
