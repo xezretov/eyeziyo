@@ -187,12 +187,13 @@
       }
     });
 
-    function bar(value, label) {
-      const v = Math.max(0, Math.min(100, Math.round(value || 0)));
-      const c = colVar(scoreColor(v));
+    function bar(value, label, max = 100) {
+      const v = Math.max(0, Math.min(max, Math.round(value || 0)));
+      const pct = max > 0 ? Math.round((v / max) * 100) : 0;
+      const c = colVar(scoreColor(pct));
       return `<div class="gt-bar-row">
-        <div class="gt-bar-top"><span>${esc(label)}</span><span style="font-weight:600">${v}</span></div>
-        <div class="gt-bar"><div class="gt-bar-fill" style="width:${v}%;background:${c}"></div></div>
+        <div class="gt-bar-top"><span>${esc(label)}</span><span style="font-weight:600">${v}/${max}</span></div>
+        <div class="gt-bar"><div class="gt-bar-fill" style="width:${pct}%;background:${c}"></div></div>
       </div>`;
     }
     function listBlock(title, color, items) {
@@ -226,9 +227,11 @@
             <span class="score-chip ${oc}" style="font-size:20px;padding:6px 18px">${e.overall_score}%</span>
             <div><div class="card-title">AI baholash</div><div class="card-subtitle">Gemini · ${esc(d.model || "")}</div></div>
           </div>
-          ${bar(e.clarity_score, "Aniqlik (Clarity)")}
-          ${bar(e.engagement_score, "Jalb qilish (Engagement)")}
-          ${bar(e.content_score, "Kontent sifati (Content)")}
+          ${bar(e.topic_score, "Mavzu mosligi va ilmiy terminologiya", 20)}
+          ${bar(e.speech_score, "Nutq maqsadliligi va akademik tozalik", 20)}
+          ${bar(e.method_score, "Metodik mahorat va tushuntirish uslubi", 20)}
+          ${bar(e.interaction_score, "Interaktivlik va talabalar qamrovi", 20)}
+          ${bar(e.feedback_score, "Baholash va teskari aloqa", 20)}
           ${e.summary ? `<div class="gt-transcript" style="margin-top:12px;max-height:none">${esc(e.summary)}</div>` : ""}
           ${listBlock("✓ Kuchli tomonlari", "var(--success)", e.strengths)}
           ${listBlock("△ Yaxshilash kerak", "var(--warning)", e.improvements)}

@@ -55,9 +55,11 @@ fun ReportsScreen(
 
     val completed = lessons.filter { it.status == "completed" && it.overallScore > 0 }
     val averageScore = if (completed.isNotEmpty()) completed.map { it.overallScore }.average().toInt() else 0
-    val avgClarity = if (completed.isNotEmpty()) completed.map { it.clarityScore }.average().toInt() else 0
-    val avgEngagement = if (completed.isNotEmpty()) completed.map { it.engagementScore }.average().toInt() else 0
-    val avgContent = if (completed.isNotEmpty()) completed.map { it.contentScore }.average().toInt() else 0
+    val avgTopic = if (completed.isNotEmpty()) completed.map { it.topicScore }.average().toInt() else 0
+    val avgSpeech = if (completed.isNotEmpty()) completed.map { it.speechScore }.average().toInt() else 0
+    val avgMethod = if (completed.isNotEmpty()) completed.map { it.methodScore }.average().toInt() else 0
+    val avgInteraction = if (completed.isNotEmpty()) completed.map { it.interactionScore }.average().toInt() else 0
+    val avgFeedback = if (completed.isNotEmpty()) completed.map { it.feedbackScore }.average().toInt() else 0
 
     val trend: Pair<ImageVector, Color> = when {
         chartData.sum() == 0f -> Icons.AutoMirrored.Filled.TrendingFlat to Ink400
@@ -96,10 +98,12 @@ fun ReportsScreen(
                     val text = buildString {
                         appendLine("📊 Eyeziyo Hisobot")
                         appendLine("Darslar: ${completed.size}")
-                        appendLine("O'rtacha ball: $averageScore%")
-                        appendLine("Tushunarlilik: $avgClarity%")
-                        appendLine("Jalb qilish: $avgEngagement%")
-                        appendLine("Kontent sifati: $avgContent%")
+                        appendLine("O'rtacha ball: $averageScore/100")
+                        appendLine("Mavzu mosligi va ilmiy terminologiya: $avgTopic/20")
+                        appendLine("Nutq maqsadliligi va akademik tozalik: $avgSpeech/20")
+                        appendLine("Metodik mahorat va tushuntirish uslubi: $avgMethod/20")
+                        appendLine("Interaktivlik va talabalar qamrovi: $avgInteraction/20")
+                        appendLine("Baholash va teskari aloqa: $avgFeedback/20")
                     }
                     val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -172,9 +176,11 @@ fun ReportsScreen(
             Spacer(Modifier.height(Spacing.md))
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SkillBar("Tushunarlilik", avgClarity, Primary, PrimaryBg, Icons.Filled.MicNone)
-                SkillBar("Jalb qilish", avgEngagement, Violet, VioletBg, Icons.Filled.Groups)
-                SkillBar("Kontent sifati", avgContent, Mint, MintBg, Icons.Filled.MenuBook)
+                SkillBar("Mavzu mosligi va ilmiy terminologiya", avgTopic, Primary, PrimaryBg, Icons.Filled.MenuBook, max = 20)
+                SkillBar("Nutq maqsadliligi va akademik tozalik", avgSpeech, Violet, VioletBg, Icons.Filled.RecordVoiceOver, max = 20)
+                SkillBar("Metodik mahorat va tushuntirish uslubi", avgMethod, Mint, MintBg, Icons.Filled.School, max = 20)
+                SkillBar("Interaktivlik va talabalar qamrovi", avgInteraction, Coral, CoralBg, Icons.Filled.Groups, max = 20)
+                SkillBar("Baholash va teskari aloqa", avgFeedback, Peach, PeachBg, Icons.Filled.Feedback, max = 20)
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -300,8 +306,10 @@ private fun SkillBar(
     value: Int,
     tint: Color,
     bg: Color,
-    icon: ImageVector
+    icon: ImageVector,
+    max: Int = 100
 ) {
+    val ratio = if (max > 0) (value.toFloat() / max).coerceIn(0f, 1f) else 0f
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
@@ -326,7 +334,7 @@ private fun SkillBar(
                         color = Ink900
                     )
                     Text(
-                        "$value%",
+                        if (max == 100) "$value%" else "$value/$max",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = tint
@@ -342,7 +350,7 @@ private fun SkillBar(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(value / 100f)
+                            .fillMaxWidth(ratio)
                             .fillMaxHeight()
                             .background(
                                 Brush.horizontalGradient(listOf(tint.copy(alpha = 0.8f), tint))

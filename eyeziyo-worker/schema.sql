@@ -29,10 +29,14 @@ CREATE TABLE IF NOT EXISTS lessons (
 CREATE TABLE IF NOT EXISTS evaluations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   lesson_id INTEGER UNIQUE NOT NULL,
+  -- overall_score = sum of the 5 criteria below (0-100)
   overall_score INTEGER DEFAULT 0,
-  clarity_score INTEGER DEFAULT 0,
-  engagement_score INTEGER DEFAULT 0,
-  content_score INTEGER DEFAULT 0,
+  -- 5 pedagogik mezon, har biri 0-20 ball:
+  topic_score INTEGER DEFAULT 0,        -- Mavzu mosligi va ilmiy terminologiya
+  speech_score INTEGER DEFAULT 0,       -- Nutq maqsadliligi va akademik tozalik
+  method_score INTEGER DEFAULT 0,       -- Metodik mahorat va tushuntirish uslubi
+  interaction_score INTEGER DEFAULT 0,  -- Interaktivlik va talabalar qamrovi
+  feedback_score INTEGER DEFAULT 0,     -- Baholash va teskari aloqa (Feedback)
   summary TEXT DEFAULT '',
   strengths TEXT DEFAULT '[]',
   improvements TEXT DEFAULT '[]',

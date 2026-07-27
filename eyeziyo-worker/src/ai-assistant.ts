@@ -40,9 +40,11 @@ async function teacherWindowStats(
            COUNT(l.id) AS lessons,
            COALESCE(SUM(l.duration_seconds), 0) AS duration_sec,
            ROUND(AVG(e.overall_score), 1) AS avg_overall,
-           ROUND(AVG(e.engagement_score), 1) AS avg_engagement,
-           ROUND(AVG(e.clarity_score), 1) AS avg_clarity,
-           ROUND(AVG(e.content_score), 1) AS avg_content
+           ROUND(AVG(e.topic_score), 1) AS avg_topic,
+           ROUND(AVG(e.speech_score), 1) AS avg_speech,
+           ROUND(AVG(e.method_score), 1) AS avg_method,
+           ROUND(AVG(e.interaction_score), 1) AS avg_interaction,
+           ROUND(AVG(e.feedback_score), 1) AS avg_feedback
     FROM users u
     JOIN lessons l ON l.user_id = u.id ${timeFilter}
     LEFT JOIN evaluations e ON e.lesson_id = l.id
@@ -76,9 +78,11 @@ async function gatherContext(admin: any, env: Env): Promise<any> {
       darslar: s.lessons,
       daqiqa: Math.round((s.duration_sec as number) / 60),
       umumiy_ball: s.avg_overall ?? null,
-      engagement: s.avg_engagement ?? null,
-      tushunarlilik: s.avg_clarity ?? null,
-      kontent: s.avg_content ?? null,
+      mavzu_terminologiya: s.avg_topic ?? null,
+      nutq_akademik_tozalik: s.avg_speech ?? null,
+      metodik_mahorat: s.avg_method ?? null,
+      interaktivlik: s.avg_interaction ?? null,
+      teskari_aloqa: s.avg_feedback ?? null,
     };
   };
 
@@ -93,7 +97,7 @@ async function gatherContext(admin: any, env: Env): Promise<any> {
   // Recent lessons — savollar ko'pincha oxirgi darslar haqida bo'ladi.
   const recent = await env.DB.prepare(`
     SELECT u.name AS teacher, l.topic, l.group_name, l.created_at,
-           l.duration_seconds, e.overall_score, e.engagement_score
+           l.duration_seconds, e.overall_score, e.interaction_score
     FROM lessons l
     JOIN users u ON u.id = l.user_id
     LEFT JOIN evaluations e ON e.lesson_id = l.id
@@ -114,7 +118,7 @@ async function gatherContext(admin: any, env: Env): Promise<any> {
       sana: r.created_at,
       daqiqa: Math.round(((r.duration_seconds as number) || 0) / 60),
       ball: r.overall_score ?? null,
-      engagement: r.engagement_score ?? null,
+      interaktivlik: r.interaction_score ?? null,
     })),
     jami_oquvchilar: studentCount?.c || 0,
   };

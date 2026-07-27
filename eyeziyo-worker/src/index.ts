@@ -970,7 +970,8 @@ async function handleGetLessons(request: Request, env: Env): Promise<Response> {
   const limit = Number.isFinite(rawLimit) ? Math.min(200, Math.max(1, rawLimit)) : 50;
 
   const lessons = await env.DB.prepare(`
-    SELECT l.*, e.overall_score, e.clarity_score, e.engagement_score, e.content_score,
+    SELECT l.*, e.overall_score, e.topic_score, e.speech_score, e.method_score,
+           e.interaction_score, e.feedback_score,
            e.summary, e.strengths, e.improvements, e.advice
     FROM lessons l LEFT JOIN evaluations e ON l.id = e.lesson_id
     WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT ?
@@ -982,8 +983,9 @@ async function handleGetLessons(request: Request, env: Env): Promise<Response> {
     transcript: r.transcript, created_at: r.created_at,
     evaluation: r.overall_score != null ? {
       id: 0, lesson_id: r.id,
-      overall_score: r.overall_score, clarity_score: r.clarity_score,
-      engagement_score: r.engagement_score, content_score: r.content_score,
+      overall_score: r.overall_score, topic_score: r.topic_score,
+      speech_score: r.speech_score, method_score: r.method_score,
+      interaction_score: r.interaction_score, feedback_score: r.feedback_score,
       summary: r.summary, strengths: JSON.parse(r.strengths || "[]"),
       improvements: JSON.parse(r.improvements || "[]"), advice: JSON.parse(r.advice || "[]"),
     } : null,
@@ -1267,9 +1269,11 @@ async function handleAdminLessonDetail(request: Request, env: Env, lessonId: num
     created_at: lesson.created_at,
     ai_evaluation: evaluation ? {
       overall_score: evaluation.overall_score,
-      clarity_score: evaluation.clarity_score,
-      engagement_score: evaluation.engagement_score,
-      content_score: evaluation.content_score,
+      topic_score: evaluation.topic_score,
+      speech_score: evaluation.speech_score,
+      method_score: evaluation.method_score,
+      interaction_score: evaluation.interaction_score,
+      feedback_score: evaluation.feedback_score,
       summary: evaluation.summary,
       strengths: JSON.parse((evaluation.strengths || "[]") as string),
       improvements: JSON.parse((evaluation.improvements || "[]") as string),

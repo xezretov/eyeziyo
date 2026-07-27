@@ -59,9 +59,11 @@ data class ApiEvaluation(
     val id: Int,
     val lesson_id: Int,
     val overall_score: Int,
-    val clarity_score: Int,
-    val engagement_score: Int,
-    val content_score: Int,
+    val topic_score: Int = 0,
+    val speech_score: Int = 0,
+    val method_score: Int = 0,
+    val interaction_score: Int = 0,
+    val feedback_score: Int = 0,
     val summary: String,
     val strengths: List<String>,
     val improvements: List<String>,
@@ -163,9 +165,11 @@ data class UpdateLessonRequest(
 @Serializable
 data class SaveEvaluationRequest(
     val overall_score: Int,
-    val clarity_score: Int,
-    val engagement_score: Int,
-    val content_score: Int,
+    val topic_score: Int,
+    val speech_score: Int,
+    val method_score: Int,
+    val interaction_score: Int,
+    val feedback_score: Int,
     val summary: String,
     val strengths: List<String>,
     val improvements: List<String>,
@@ -577,9 +581,11 @@ class ApiService private constructor(context: Context) {
     suspend fun saveEvaluation(
         lessonId: Int,
         overallScore: Int,
-        clarityScore: Int,
-        engagementScore: Int,
-        contentScore: Int,
+        topicScore: Int,
+        speechScore: Int,
+        methodScore: Int,
+        interactionScore: Int,
+        feedbackScore: Int,
         summary: String,
         strengths: List<String>,
         improvements: List<String>,
@@ -588,7 +594,7 @@ class ApiService private constructor(context: Context) {
         return withContext(Dispatchers.IO) {
             try {
                 val request = SaveEvaluationRequest(
-                    overallScore, clarityScore, engagementScore, contentScore,
+                    overallScore, topicScore, speechScore, methodScore, interactionScore, feedbackScore,
                     summary, strengths, improvements, advice
                 )
                 val body = json.encodeToString(request)

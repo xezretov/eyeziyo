@@ -2531,12 +2531,13 @@ async function openLessonDetailModal(lessonId) {
     const overallCol = e ? cssScoreColor(e.overall_score) : "var(--text-subtle)";
 
     // ── helpers ──────────────────────────────────────────────
-    function scoreBar(value, label, delay) {
-      const pct = Math.max(0, Math.min(100, Math.round(value || 0)));
-      const col = pct >= 70 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)";
+    function scoreBar(value, label, delay, max = 100) {
+      const val = Math.max(0, Math.min(max, Math.round(value || 0)));
+      const ratio = max > 0 ? val / max : 0;
+      const col = ratio >= 0.7 ? "var(--success)" : ratio >= 0.5 ? "var(--warning)" : "var(--danger)";
       return `<div class="la-score">
-        <div class="la-score-head"><span class="l">${escapeHtml(label)}</span><span class="v" style="color:${col}">${pct}<span class="max">/100</span></span></div>
-        <div class="la-score-track"><div class="la-score-fill" style="width:${pct}%;background:${col};animation-delay:${delay}ms"></div></div>
+        <div class="la-score-head"><span class="l">${escapeHtml(label)}</span><span class="v" style="color:${col}">${val}<span class="max">/${max}</span></span></div>
+        <div class="la-score-track"><div class="la-score-fill" style="width:${Math.round(ratio * 100)}%;background:${col};animation-delay:${delay}ms"></div></div>
       </div>`;
     }
     function infoRow(icon, label, value) {
@@ -2572,9 +2573,11 @@ async function openLessonDetailModal(lessonId) {
     const resultsCard = e ? `
       <div class="la-card">
         <div class="la-card-title"><span class="la-ico" style="background:var(--success-50);color:var(--success)">${I.quiz}</span> Tahlil natijalari</div>
-        ${scoreBar(e.clarity_score, "Aniqlik (nutq)", 60)}
-        ${scoreBar(e.engagement_score, "Jalb qilish", 140)}
-        ${scoreBar(e.content_score, "Kontent sifati", 220)}
+        ${scoreBar(e.topic_score, "Mavzu mosligi va ilmiy terminologiya", 60, 20)}
+        ${scoreBar(e.speech_score, "Nutq maqsadliligi va akademik tozalik", 120, 20)}
+        ${scoreBar(e.method_score, "Metodik mahorat va tushuntirish uslubi", 180, 20)}
+        ${scoreBar(e.interaction_score, "Interaktivlik va talabalar qamrovi", 240, 20)}
+        ${scoreBar(e.feedback_score, "Baholash va teskari aloqa", 300, 20)}
         <div class="la-total">
           <span class="l">Umumiy ball</span>
           <span class="v" style="color:${overallCol}">${e.overall_score}<span class="max">/100</span></span>
