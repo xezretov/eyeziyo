@@ -194,8 +194,10 @@ export async function syncGroups(env: SyncEnv, instId: number): Promise<SyncResu
     const parentNodeId = g.specialty?.id ? directionMap.get(g.specialty.id) ?? null : null;
     const rowId = existing.get(g.id);
     if (rowId) {
+      // Keep an existing parent (e.g. a course node set by syncCourses) so a
+      // structure re-sync doesn't flatten the faculty->direction->course tree.
       stmts.push(env.DB.prepare(
-        "UPDATE groups_v2 SET name = ?, parent_node_id = ? WHERE id = ?"
+        "UPDATE groups_v2 SET name = ?, parent_node_id = COALESCE(parent_node_id, ?) WHERE id = ?"
       ).bind(g.name, parentNodeId, rowId));
       updated++;
     } else {
@@ -224,7 +226,9 @@ export async function syncTeachers(env: SyncEnv, instId: number): Promise<SyncRe
   for (const e of all) {
     const name = e.full_name || e.short_name || `Employee ${e.id}`;
     const avatar = (name.trim().charAt(0) || "?").toUpperCase();
-    const email = `emp-${e.employee_id_number || e.id}@hemis.local`;
+    // HEMIS entity id is the stable unique key; employee_id_number can be empty
+    // or shared across employees, which caused email collisions + dropped rows.
+    const email = `emp-${e.id}@hemis.local`;
     const rowId = existing.get(e.id);
     if (rowId) {
       stmts.push(env.DB.prepare(
@@ -263,18 +267,21 @@ export async function syncStudents(env: SyncEnv, instId: number, page: number): 
   for (const s of pg.items) {
     const name = s.full_name || s.short_name || `Student ${s.id}`;
     const avatar = (name.trim().charAt(0) || "?").toUpperCase();
-    const email = `stu-${s.student_id_number || s.id}@hemis.local`;
+    const email = `stu-${s.id}@hemis.local`;
+    // HEMIS has no course entity; the kurs is the student's level ("3-kurs").
+    // Stored on course_type so syncCourses can derive per-group course nodes.
+    const level = s.level?.name || "";
     const rowId = existing.get(s.id);
     if (rowId) {
       stmts.push(env.DB.prepare(
-        "UPDATE users SET name = ?, avatar = ? WHERE id = ?"
-      ).bind(name, avatar, rowId));
+        "UPDATE users SET name = ?, avatar = ?, course_type = ? WHERE id = ?"
+      ).bind(name, avatar, level, rowId));
       updated++;
     } else {
       stmts.push(env.DB.prepare(
         `INSERT OR IGNORE INTO users (email, password_hash, name, role, avatar, groups, course_type, institution_id, type, hemis_id)
-         VALUES (?, ?, ?, 'student', ?, '[]', '', ?, 'university', ?)`
-      ).bind(email, SSO_ONLY_PASSWORD, name, avatar, instId, s.id));
+         VALUES (?, ?, ?, 'student', ?, '[]', ?, ?, 'university', ?)`
+      ).bind(email, SSO_ONLY_PASSWORD, name, avatar, level, instId, s.id));
       inserted++;
     }
     const groupRowId = s.group?.id ? groupMap.get(s.group.id) : undefined;
@@ -358,9 +365,107 @@ export async function syncAssignments(env: SyncEnv, instId: number, page: number
   };
 }
 
+// ── courses (derived) ──
+// HEMIS has no "course" (kurs) entity — it's the student's level. This builds
+// the faculty->direction->course tier and re-parents each group under the course
+// node matching the dominant student level in that group. Run AFTER students
+// (needs users.course_type populated by syncStudents).
+export async function syncCourses(env: SyncEnv, instId: number): Promise<SyncResult> {
+  const groups = await hemisFetchAll<HemisGroup>(env, "v1/data/group-list");
+  const directionMap = await idMap(
+    env.DB,
+    "SELECT id, hemis_id FROM hierarchy_nodes WHERE institution_id = ? AND node_type = 'direction' AND hemis_id IS NOT NULL",
+    instId
+  );
+  const groupRowMap = await idMap(
+    env.DB,
+    "SELECT id, hemis_id FROM groups_v2 WHERE institution_id = ? AND hemis_id IS NOT NULL",
+    instId
+  );
+
+  // Dominant level (course_type, e.g. "3-kurs") per group row, from its students.
+  const lvlRows = await env.DB.prepare(
+    `SELECT sg.group_id AS gid, u.course_type AS lvl, COUNT(*) AS c
+     FROM student_groups sg
+     JOIN users u ON sg.student_id = u.id
+     WHERE u.institution_id = ? AND u.role = 'student' AND u.course_type != ''
+     GROUP BY sg.group_id, u.course_type`
+  ).bind(instId).all<{ gid: number; lvl: string; c: number }>();
+  const bestLevel = new Map<number, { lvl: string; c: number }>();
+  for (const r of lvlRows.results || []) {
+    const cur = bestLevel.get(Number(r.gid));
+    if (!cur || Number(r.c) > cur.c) bestLevel.set(Number(r.gid), { lvl: r.lvl, c: Number(r.c) });
+  }
+
+  const existingCourses = await idMap(
+    env.DB,
+    "SELECT id, hemis_id FROM hierarchy_nodes WHERE institution_id = ? AND node_type = 'course' AND hemis_id IS NOT NULL",
+    instId
+  );
+
+  // Synthetic stable id per (direction, level) so the course node upsert is
+  // idempotent via the (institution, node_type, hemis_id) unique index.
+  const wanted = new Map<number, { synthId: number; name: string; dirNodeId: number; sort: number }>();
+  const groupToCourse = new Map<number, number>(); // group row id -> course synthId
+  for (const g of groups) {
+    if (!g.specialty?.id) continue;
+    const dirNodeId = directionMap.get(g.specialty.id);
+    if (!dirNodeId) continue;
+    const grpRow = groupRowMap.get(g.id);
+    if (!grpRow) continue;
+    const best = bestLevel.get(grpRow);
+    if (!best) continue;
+    const levelNum = parseInt(best.lvl, 10);
+    if (!levelNum) continue;
+    const synthId = g.specialty.id * 100 + levelNum;
+    if (!wanted.has(synthId)) {
+      wanted.set(synthId, { synthId, name: best.lvl, dirNodeId, sort: levelNum });
+    }
+    groupToCourse.set(grpRow, synthId);
+  }
+
+  let inserted = 0, updated = 0;
+  const nodeStmts: D1PreparedStatement[] = [];
+  for (const c of wanted.values()) {
+    const rowId = existingCourses.get(c.synthId);
+    if (rowId) {
+      nodeStmts.push(env.DB.prepare(
+        "UPDATE hierarchy_nodes SET name = ?, parent_id = ?, sort_order = ? WHERE id = ?"
+      ).bind(c.name, c.dirNodeId, c.sort, rowId));
+      updated++;
+    } else {
+      nodeStmts.push(env.DB.prepare(
+        `INSERT INTO hierarchy_nodes (institution_id, parent_id, node_type, name, short_name, sort_order, hemis_id)
+         VALUES (?, ?, 'course', ?, '', ?, ?)`
+      ).bind(instId, c.dirNodeId, c.name, c.sort, c.synthId));
+      inserted++;
+    }
+  }
+  if (nodeStmts.length) await env.DB.batch(nodeStmts);
+
+  // Resolve course node ids (incl. freshly inserted) then re-parent groups.
+  const courseMap = await idMap(
+    env.DB,
+    "SELECT id, hemis_id FROM hierarchy_nodes WHERE institution_id = ? AND node_type = 'course' AND hemis_id IS NOT NULL",
+    instId
+  );
+  const grpStmts: D1PreparedStatement[] = [];
+  for (const [grpRow, synthId] of groupToCourse) {
+    const courseNodeId = courseMap.get(synthId);
+    if (!courseNodeId) continue;
+    grpStmts.push(env.DB.prepare(
+      "UPDATE groups_v2 SET parent_node_id = ? WHERE id = ?"
+    ).bind(courseNodeId, grpRow));
+  }
+  if (grpStmts.length) await env.DB.batch(grpStmts);
+
+  await recordState(env.DB, instId, "courses", { total: wanted.size });
+  return { entity: "courses", total: wanted.size, inserted, updated, done: true };
+}
+
 export type SyncScope =
   | "departments" | "specialties" | "subjects" | "groups"
-  | "teachers" | "students" | "assignments" | "structure";
+  | "teachers" | "students" | "assignments" | "courses" | "structure";
 
 /**
  * Run one sync step. `structure` chains the small collections in one call
@@ -383,6 +488,7 @@ export async function runSync(
     case "teachers":    return [await syncTeachers(env, instId)];
     case "students":    return [await syncStudents(env, instId, page)];
     case "assignments": return [await syncAssignments(env, instId, page)];
+    case "courses":     return [await syncCourses(env, instId)];
     case "structure":
       return [
         await syncDepartments(env, instId),

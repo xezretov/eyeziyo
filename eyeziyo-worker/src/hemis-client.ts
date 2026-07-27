@@ -251,6 +251,7 @@ export interface HemisStudent {
   department?: HemisDepartment;
   specialty?: HemisSpecialty;
   group?: { id: number; name: string };
+  level?: HemisClassifier;
   studentStatus?: HemisClassifier;
 }
 
