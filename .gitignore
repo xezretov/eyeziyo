@@ -33,6 +33,10 @@ aisha-ct2/
 # Claude config
 .claude/
 
+# Local dev preview harness (admin-web) — not for production
+admin-web/preview.html
+admin-web/mock.js
+
 # OS
 .DS_Store
 Thumbs.db
