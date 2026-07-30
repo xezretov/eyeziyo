@@ -112,6 +112,7 @@ const I = {
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   starFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  room: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>',
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -183,6 +184,7 @@ function route(view, params) {
   else if (view === "groups") renderGroups();
   else if (view === "group") renderGroup(params.id);
   else if (view === "subjects") renderSubjects();
+  else if (view === "auditoriums") renderAuditoriums();
   else if (view === "evals") renderEvalQuestions();
   else if (view === "settings") renderSettings();
   else if (view && view.startsWith("hier:")) renderHierarchy(view.split(":")[1]);
@@ -408,6 +410,7 @@ function buildNavItems() {
     ...cfg.levels.map(l => ({ key: `hier:${l.key}`, label: l.plural, icon: l.icon || I.groups })),
     { key: "groups", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", icon: I.groups },
     ...(cfg.hasSubjects ? [{ key: "subjects", label: "Fanlar", icon: I.subjects }] : []),
+    ...(AppState.institution?.type === "university" ? [{ key: "auditoriums", label: "Xonalar", icon: I.room }] : []),
     { key: "evals", label: "Baholash savollari", icon: I.star },
     { section: "Odamlar" },
     { key: "teachers", label: "O'qituvchilar", icon: I.teachers },
@@ -1368,6 +1371,7 @@ function openHierarchyModal(existing, level, parentLevel) {
 // SUBJECTS
 // ═══════════════════════════════════════════════════════════════
 const SubjectsState = { q: "" };
+const AuditoriumsState = { q: "" };
 
 async function renderSubjects() {
   setBreadcrumbs([{ label: "Dashboard", route: "dashboard" }, { label: "Fanlar" }]);
@@ -1461,6 +1465,83 @@ async function renderSubjects() {
     });
   } catch (err) {
     document.getElementById("sub-body").innerHTML = `<div class="error show">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDITORIUMS (HEMIS rooms — read-only reference)
+// ═══════════════════════════════════════════════════════════════
+async function renderAuditoriums() {
+  setBreadcrumbs([{ label: "Dashboard", route: "dashboard" }, { label: "Xonalar" }]);
+  setMain(`
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Xonalar</h1>
+        <div class="page-subtitle">Universitet auditoriyalari (HEMIS'dan)</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn-secondary btn-sm" id="aud-refresh">${I.refresh} Yangilash</button>
+      </div>
+    </div>
+    <div id="aud-body">${skeletonBlock(300)}</div>
+  `);
+  document.getElementById("aud-refresh").addEventListener("click", () => renderAuditoriums());
+
+  try {
+    const items = await api("/api/admin/auditoriums");
+    const q = AuditoriumsState.q.toLowerCase();
+    const filtered = q
+      ? items.filter(x =>
+          (x.name || "").toLowerCase().includes(q) ||
+          (x.building_name || "").toLowerCase().includes(q) ||
+          (x.type_name || "").toLowerCase().includes(q))
+      : items;
+
+    document.getElementById("aud-body").innerHTML = `
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="aud-search" placeholder="Xona, bino yoki tur..." value="${escapeAttr(AuditoriumsState.q)}">
+        </div>
+        <div class="spacer"></div>
+        <span class="tag">Jami: ${items.length}</span>
+      </div>
+      ${filtered.length === 0 ? emptyStateHtml("Xonalar topilmadi", "HEMIS sahifasida \"Struktura\" sinxronini ishga tushiring.") : `
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Xona</th>
+                  <th>Bino</th>
+                  <th>Turi</th>
+                  <th class="num">Sig'imi</th>
+                  <th>Holati</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filtered.map(a => `
+                  <tr>
+                    <td><div style="display:flex;align-items:center;gap:8px">
+                      <div class="l-icon" style="width:28px;height:28px">${I.room}</div>
+                      <strong>${escapeHtml(a.name || "—")}</strong>
+                    </div></td>
+                    <td>${escapeHtml(a.building_name || "—")}</td>
+                    <td>${a.type_name ? `<span class="tag">${escapeHtml(a.type_name)}</span>` : "—"}</td>
+                    <td class="num">${a.volume || 0}</td>
+                    <td>${a.active ? '<span class="tag" style="color:var(--success)">Faol</span>' : '<span class="tag" style="color:var(--danger)">Nofaol</span>'}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `}
+    `;
+
+    document.getElementById("aud-search").addEventListener("input", debounce((e) => { AuditoriumsState.q = e.target.value; renderAuditoriums(); }, 150));
+  } catch (err) {
+    document.getElementById("aud-body").innerHTML = `<div class="error show">${escapeHtml(err.message)}</div>`;
   }
 }
 

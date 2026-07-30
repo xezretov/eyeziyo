@@ -325,6 +325,22 @@ export async function handleListSubjects(admin: any, env: Env): Promise<Response
   })));
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AUDITORIUMS (HEMIS rooms, read-only reference)
+// ═══════════════════════════════════════════════════════════════
+
+export async function handleListAuditoriums(admin: any, env: Env): Promise<Response> {
+  const [instId, err] = await requireInstitution(admin);
+  if (err) return err;
+  const rows = await env.DB.prepare(
+    `SELECT id, hemis_code, name, type_name, building_name, volume, active
+     FROM auditoriums
+     WHERE institution_id = ?
+     ORDER BY building_name, name`
+  ).bind(instId).all();
+  return json(rows.results);
+}
+
 export async function handleCreateSubject(request: Request, admin: any, env: Env): Promise<Response> {
   const [instId, err] = await requireInstitution(admin);
   if (err) return err;

@@ -67,6 +67,7 @@
           <button class="btn-primary" data-scope="structure">Struktura</button>
           <button class="btn-secondary" data-scope="students">Talabalar</button>
           <button class="btn-secondary" data-scope="courses">Kurslar</button>
+          <button class="btn-secondary" data-scope="auditoriums">Xonalar</button>
           <button class="btn-secondary" data-scope="assignments">Tayinlashlar</button>
         </div>
         <div class="error" id="hs-error" style="margin-top:12px"></div>
@@ -143,7 +144,7 @@
       err.classList.remove("show");
       setBusy(true);
       try {
-        if (scope === "structure" || scope === "courses") {
+        if (scope === "structure" || scope === "courses" || scope === "auditoriums") {
           log(`${scope} sinxroni boshlandi…`);
           const d = await api("/api/admin/hemis/sync", {
             method: "POST", headers: { "Content-Type": "application/json" },

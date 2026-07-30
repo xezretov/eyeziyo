@@ -21,7 +21,7 @@
 import {
   HemisEnv, hemisFetchAll, hemisFetchPage,
   HemisDepartment, HemisSpecialty, HemisSubject, HemisGroup,
-  HemisEmployee, HemisStudent, HemisCurriculumSubjectTeacher,
+  HemisEmployee, HemisStudent, HemisCurriculumSubjectTeacher, HemisAuditorium,
 } from "./hemis-client";
 
 export interface SyncEnv extends HemisEnv {
@@ -463,9 +463,44 @@ export async function syncCourses(env: SyncEnv, instId: number): Promise<SyncRes
   return { entity: "courses", total: wanted.size, inserted, updated, done: true };
 }
 
+// ── auditoriums (university rooms) ──
+export async function syncAuditoriums(env: SyncEnv, instId: number): Promise<SyncResult> {
+  const all = await hemisFetchAll<HemisAuditorium>(env, "v1/data/auditorium-list");
+  const existing = await idMap(
+    env.DB,
+    "SELECT id, hemis_code AS hemis_id FROM auditoriums WHERE institution_id = ? AND hemis_code IS NOT NULL",
+    instId
+  );
+  let inserted = 0, updated = 0;
+  const stmts: D1PreparedStatement[] = [];
+  for (const a of all) {
+    const typeName = a.auditoriumType?.name || "";
+    const buildingName = a.building?.name || "";
+    const volume = a.volume || 0;
+    const active = a.active === false ? 0 : 1;
+    const rowId = existing.get(a.code);
+    if (rowId) {
+      stmts.push(env.DB.prepare(
+        "UPDATE auditoriums SET name = ?, type_name = ?, building_name = ?, volume = ?, active = ? WHERE id = ?"
+      ).bind(a.name, typeName, buildingName, volume, active, rowId));
+      updated++;
+    } else {
+      stmts.push(env.DB.prepare(
+        `INSERT INTO auditoriums (institution_id, hemis_code, name, type_name, building_name, volume, active)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(instId, a.code, a.name, typeName, buildingName, volume, active));
+      inserted++;
+    }
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+  await recordState(env.DB, instId, "auditoriums", { total: all.length });
+  return { entity: "auditoriums", total: all.length, inserted, updated, done: true };
+}
+
 export type SyncScope =
   | "departments" | "specialties" | "subjects" | "groups"
-  | "teachers" | "students" | "assignments" | "courses" | "structure";
+  | "teachers" | "students" | "assignments" | "courses"
+  | "auditoriums" | "structure";
 
 /**
  * Run one sync step. `structure` chains the small collections in one call
@@ -489,6 +524,7 @@ export async function runSync(
     case "students":    return [await syncStudents(env, instId, page)];
     case "assignments": return [await syncAssignments(env, instId, page)];
     case "courses":     return [await syncCourses(env, instId)];
+    case "auditoriums": return [await syncAuditoriums(env, instId)];
     case "structure":
       return [
         await syncDepartments(env, instId),
@@ -496,6 +532,7 @@ export async function runSync(
         await syncSubjects(env, instId),
         await syncGroups(env, instId),
         await syncTeachers(env, instId),
+        await syncAuditoriums(env, instId),
       ];
     default:
       throw new Error("Noma'lum sync scope");

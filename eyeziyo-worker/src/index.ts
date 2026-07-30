@@ -37,6 +37,7 @@ import {
   handleGetInstitution, handleCreateInstitution, handleUpdateInstitution,
   handleListHierarchy, handleCreateHierarchy, handleUpdateHierarchy, handleDeleteHierarchy,
   handleListSubjects, handleCreateSubject, handleUpdateSubject, handleDeleteSubject,
+  handleListAuditoriums,
   handleListGroups, handleGetGroup, handleCreateGroup, handleUpdateGroup, handleDeleteGroup,
   handleGetTeacherAssignments, handleSetTeacherAssignments,
   handleSetStudentGroups,
@@ -436,6 +437,13 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         const [admin, aerr] = await requireAdmin(request, env);
         if (aerr) return aerr;
         return handleListSubjects(admin, env);
+      }
+
+      // ── Auditoriums (HEMIS rooms) ──
+      if (path === "/api/admin/auditoriums" && method === "GET") {
+        const [admin, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        return handleListAuditoriums(admin, env);
       }
       if (path === "/api/admin/subjects" && method === "POST") {
         const [admin, aerr] = await requireAdmin(request, env);
@@ -884,7 +892,7 @@ async function handleRefresh(request: Request, env: Env): Promise<Response> {
 
 const HEMIS_SYNC_SCOPES = new Set<SyncScope>([
   "departments", "specialties", "subjects", "groups",
-  "teachers", "students", "assignments", "courses", "structure",
+  "teachers", "students", "assignments", "courses", "auditoriums", "structure",
 ]);
 
 /** Verify a HEMIS SSO token and log the student into eyeziyo. */

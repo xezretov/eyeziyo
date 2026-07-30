@@ -255,6 +255,15 @@ export interface HemisStudent {
   studentStatus?: HemisClassifier;
 }
 
+export interface HemisAuditorium {
+  code: number;
+  name: string;
+  auditoriumType?: HemisClassifier;
+  building?: { id: number; name: string };
+  volume?: number;
+  active?: boolean;
+}
+
 export interface HemisCurriculumSubjectTeacher {
   id: number;
   _group?: number;
