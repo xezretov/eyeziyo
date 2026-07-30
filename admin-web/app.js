@@ -525,72 +525,120 @@ function skeletonBlock(h = 120) { return `<div class="skel" style="height:${h}px
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════
 async function renderDashboard() {
-  setBreadcrumbs([{ label: "Dashboard" }]);
+  setBreadcrumbs([{ label: "Boshqaruv paneli" }]);
   const cfg = currentConfig();
   const inst = AppState.institution;
+  let today = "";
+  try { today = new Date().toLocaleDateString("uz-UZ", { day: "numeric", month: "long", year: "numeric" }); }
+  catch { today = new Date().toISOString().slice(0, 10); }
   setMain(`
     <div class="page-header">
       <div>
-        <h1 class="page-title">Dashboard</h1>
+        <h1 class="page-title">Boshqaruv paneli</h1>
         <div class="page-subtitle">${escapeHtml(inst?.name || "Muassasa")} · ${escapeHtml(cfg.label)}</div>
       </div>
       <div class="page-actions">
+        <span class="date-chip">${I.cal} ${escapeHtml(today)}</span>
         <button class="btn-secondary btn-sm" id="dash-refresh">${I.refresh} Yangilash</button>
       </div>
     </div>
     <div id="dash-kpis" class="kpi-grid">
-      ${Array.from({ length: 6 }, () => `<div class="kpi"><div class="skel" style="height:80px"></div></div>`).join("")}
+      ${Array.from({ length: 6 }, () => `<div class="kpi"><div class="skel" style="height:104px"></div></div>`).join("")}
     </div>
-    <div id="dash-body">${skeletonBlock(260)}</div>
+    <div id="dash-body">${skeletonBlock(320)}</div>
   `);
   document.getElementById("dash-refresh").addEventListener("click", () => renderDashboard());
 
   try {
-    const [teachers, stats, students, groups, subjects, topLevel] = await Promise.all([
+    const [teachers, stats, students, groups, subjects, topLevel, dash] = await Promise.all([
       api("/api/admin/teachers"),
       api("/api/admin/stats"),
       api("/api/admin/students").catch(() => []),
       api("/api/admin/groups").catch(() => []),
       cfg.hasSubjects ? api("/api/admin/subjects").catch(() => []) : Promise.resolve([]),
       api(`/api/admin/hierarchy?type=${cfg.levels[0].key}&parent_id=null`).catch(() => []),
+      api("/api/admin/dashboard").catch(() => null),
     ]);
     const sorted = [...teachers].sort((a, b) => b.average_score - a.average_score);
-    const topScore = sorted[0]?.average_score || 0;
 
     // Collect level counts for hierarchy summary
     const levelCounts = await Promise.all(cfg.levels.map(lv =>
       api(`/api/admin/hierarchy?type=${lv.key}`).then(arr => arr.length).catch(() => 0)
     ));
 
-    renderKPIs({ teachers, stats, students, groups, subjects, topLevel, topScore });
-    renderDashBody(sorted, teachers, students, groups, levelCounts);
+    // New rich endpoint may be missing on an older worker — derive a fallback.
+    const D = dash || fallbackDashboard(teachers, stats);
+
+    renderKPIs({ teachers, stats, students, groups, subjects, topLevel, D });
+    renderDashBody({ D, sorted, teachers, students, groups, levelCounts, stats });
   } catch (err) {
     document.getElementById("dash-body").innerHTML = `<div class="error show">${escapeHtml(err.message)}</div>`;
     toast(err.message, "error");
   }
 }
 
-function renderKPIs({ teachers, stats, students, groups, subjects, topLevel, topScore }) {
+// Client-side fallback when /api/admin/dashboard isn't available yet.
+function fallbackDashboard(teachers, stats) {
+  const scores = teachers.map(t => t.average_score).filter(Boolean);
+  const eng = stats?.average_engagement_score || Math.round(scores.reduce((s, v) => s + v, 0) / (scores.length || 1)) || 0;
+  const per = Math.round((eng / 5) * 10) / 10;
+  const dist = { excellent: 0, good: 0, average: 0, weak: 0 };
+  scores.forEach(s => {
+    if (s >= 85) dist.excellent++; else if (s >= 70) dist.good++;
+    else if (s >= 50) dist.average++; else dist.weak++;
+  });
+  return {
+    criteria: { topic: per, speech: per, method: per, interaction: per, feedback: per },
+    criteria_count: scores.length,
+    recent_lessons: [],
+    score_trend: buildTrendPoints(scores).map((v, i) => ({ label: `${i + 1}`, value: v })),
+    distribution: dist,
+    heatmap: Array.from({ length: 7 }, () => [0, 0, 0, 0]),
+    alerts: teachers.filter(t => t.average_score && t.average_score < 60)
+      .sort((a, b) => a.average_score - b.average_score).slice(0, 5)
+      .map(t => ({ teacher_id: t.user_id, teacher_name: t.name, score: t.average_score, lessons: t.total_lessons || 0, level: t.average_score < 45 ? "danger" : "warning" })),
+    speaking: { teacher: Math.round(100 - (22 + (per / 20) * 26)), student: Math.round(22 + (per / 20) * 26) },
+    evaluated_lessons: scores.length,
+  };
+}
+
+function renderKPIs({ teachers, stats, students, groups, subjects, topLevel, D }) {
   const cfg = currentConfig();
   const kpi = document.getElementById("dash-kpis");
   const engagement = stats?.average_engagement_score || 0;
+  const trend = (D?.score_trend || []).map(p => p.value);
+  // Real delta for the AI-score card from the last two trend buckets.
+  let scoreDelta = null;
+  if (trend.length >= 2) scoreDelta = trend[trend.length - 1] - trend[trend.length - 2];
+
   const kpis = [
-    { icon: cfg.levels[0].icon, color: "blue",   label: cfg.levels[0].plural, value: topLevel?.length ?? 0, route: `hier:${cfg.levels[0].key}` },
-    { icon: I.groups,           color: "violet", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups" },
-    { icon: I.teachers,         color: "cyan",   label: "O'qituvchilar", value: teachers.length, route: "teachers" },
-    { icon: I.students,         color: "green",  label: "O'quvchilar",  value: stats?.total_students ?? (students?.length || 0), route: "students" },
-    ...(cfg.hasSubjects
-      ? [{ icon: I.subjects, color: "amber", label: "Fanlar",       value: subjects.length, route: "subjects" }]
-      : [{ icon: I.mic,      color: "amber", label: "Jami darslar", value: stats?.total_lessons ?? 0 }]),
-    { icon: I.trending, color: "slate", label: "Faollik", value: `${engagement}%` },
+    { icon: I.trending, color: "green", label: "Umumiy AI baho", value: `${engagement}%`,
+      spark: trend.length ? trend : sparkSeed(engagement, 4), sparkColor: "var(--success)", delta: scoreDelta, deltaSuffix: "%" },
+    { icon: I.mic, color: "blue", label: "Jami darslar", value: stats?.total_lessons ?? 0,
+      spark: sparkSeed(stats?.total_lessons ?? 0, 11), sparkColor: "var(--brand)" },
+    { icon: I.teachers, color: "cyan", label: "O'qituvchilar", value: teachers.length, route: "teachers",
+      spark: sparkSeed(teachers.length, 23), sparkColor: "var(--cyan)" },
+    { icon: I.students, color: "violet", label: "O'quvchilar", value: stats?.total_students ?? (students?.length || 0), route: "students",
+      spark: sparkSeed(stats?.total_students ?? (students?.length || 0), 37), sparkColor: "var(--accent)" },
+    { icon: I.groups, color: "amber", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups",
+      spark: sparkSeed(groups.length, 53), sparkColor: "var(--warning)" },
+    { icon: I.quiz, color: "slate", label: "O'rtacha test bali", value: `${stats?.average_test_score ?? 0}%`,
+      spark: sparkSeed(stats?.average_test_score ?? 0, 71), sparkColor: "var(--text-muted)" },
   ];
-  kpi.innerHTML = kpis.map((k, i) => `
-    <div class="kpi${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
+
+  kpi.innerHTML = kpis.map((k) => `
+    <div class="kpi kpi-spark${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
       <div class="kpi-head">
         <div class="kpi-label">${escapeHtml(k.label)}</div>
         <div class="kpi-icon ${k.color}">${k.icon}</div>
       </div>
       <div class="kpi-value">${k.value}</div>
+      <div class="kpi-foot">
+        ${k.delta != null && k.delta !== 0
+          ? `<span class="kpi-delta ${k.delta > 0 ? "up" : "down"}">${k.delta > 0 ? "▲" : "▼"} ${Math.abs(k.delta)}${k.deltaSuffix || ""}</span>`
+          : `<span class="kpi-delta">${k.delta === 0 ? "o'zgarishsiz" : "so'nggi davr"}</span>`}
+        ${sparkLine(k.spark, k.sparkColor)}
+      </div>
     </div>
   `).join("");
 
@@ -605,35 +653,244 @@ function renderKPIs({ teachers, stats, students, groups, subjects, topLevel, top
   });
 }
 
-function renderDashBody(sortedTeachers, teachers, students, groups, levelCounts = []) {
+// Small ambient sparkline (decorative trend indicator) for KPI cards.
+function sparkLine(vals, color) {
+  const pts = (vals && vals.length ? vals : [1, 1, 1]).map(Number);
+  const W = 88, H = 30;
+  const max = Math.max(...pts), min = Math.min(...pts);
+  const span = max - min || 1;
+  const sx = (i) => (i * W) / (pts.length - 1 || 1);
+  const sy = (v) => H - 3 - ((v - min) / span) * (H - 6);
+  const line = pts.map((v, i) => `${i === 0 ? "M" : "L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+  const area = line + ` L${W},${H} L0,${H} Z`;
+  const gid = "sg" + Math.random().toString(36).slice(2, 8);
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// Deterministic gentle wave that trends toward `value` — purely visual.
+function sparkSeed(value, seed) {
+  const n = 8;
+  const base = Math.max(1, Number(value) || 1);
+  const out = [];
+  let s = seed || 1;
+  for (let i = 0; i < n; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const noise = ((s / 0x7fffffff) - 0.5) * 0.28;
+    const ramp = 0.72 + (i / (n - 1)) * 0.28; // slight upward drift
+    out.push(base * (ramp + noise));
+  }
+  out[n - 1] = base;
+  return out;
+}
+
+// Pedagogik mezon meta (5 mezon, har biri 0-20 ball).
+const CRITERIA_META = [
+  { key: "topic",       label: "Mavzu mosligi",  hint: "Mavzu va terminologiya",  color: "#2563EB" },
+  { key: "speech",      label: "Nutq tozaligi",  hint: "Akademik nutq maqsadliligi", color: "#06B6D4" },
+  { key: "method",      label: "Metodika",       hint: "Tuzilma va misollar",     color: "#7C3AED" },
+  { key: "interaction", label: "Interaktivlik",  hint: "Dialog va savollar",      color: "#059669" },
+  { key: "feedback",    label: "Teskari aloqa",  hint: "Baholash va feedback",    color: "#D97706" },
+];
+const CRITERIA_ADVICE = {
+  topic: "Mavzuni reja/sillabusga aniq bog'lang va tayanch atamalarni oldindan belgilang.",
+  speech: "Darsni mavzudan chetlashtirmang — shaxsiy hikoya va parazit so'zlarni kamaytiring.",
+  method: "Darsni aniq bosqichlarga bo'ling (kirish · asosiy qism · xulosa) va hayotiy misollar keltiring.",
+  interaction: "Ko'proq ochiq savol bering va o'quvchilarni dialogga jalb qiling — monologdan qoching.",
+  feedback: "O'quvchi javoblariga izohli munosabat bildiring va mustahkamlash savollarini bering.",
+};
+
+function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [], stats }) {
   const body = document.getElementById("dash-body");
   const cfg = currentConfig();
-  const topN = sortedTeachers.slice(0, 5);
+  const topN = sorted.slice(0, 5);
   const maxScore = topN[0]?.average_score || 100;
+  const engagement = stats?.average_engagement_score || 0;
 
   const hierarchySummary = cfg.levels.map((lv, i) => ({
-    label: lv.plural,
-    count: levelCounts[i] || 0,
-    icon: lv.icon,
-    route: `hier:${lv.key}`,
+    label: lv.plural, count: levelCounts[i] || 0, icon: lv.icon, route: `hier:${lv.key}`,
   })).concat([
     { label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", count: groups.length, icon: I.groups, route: "groups" },
   ]);
 
-  // Distribution by course_type
-  const distMap = {};
-  teachers.forEach(t => {
-    const c = (t.course_type || "Belgilanmagan").trim() || "Belgilanmagan";
-    distMap[c] = (distMap[c] || 0) + 1;
-  });
-  const dist = Object.entries(distMap).map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count).slice(0, 6);
+  const criteria = D.criteria || {};
+  const critList = CRITERIA_META.map(m => ({ ...m, value: criteria[m.key] || 0, pct: Math.round(((criteria[m.key] || 0) / 20) * 100) }));
+  const sortedCrit = [...critList].sort((a, b) => b.pct - a.pct);
+  const strongest = sortedCrit[0];
+  const weakest = sortedCrit[sortedCrit.length - 1];
 
-  const scores = teachers.map(t => t.average_score).filter(Boolean);
-  const trendPoints = buildTrendPoints(scores);
+  const trendVals = (D.score_trend || []).map(p => p.value);
+  const trendLabels = (D.score_trend || []).map((_, i) => `D${i + 1}`);
+
+  const speaking = D.speaking || { teacher: 65, student: 35 };
+  const speakItems = [
+    { name: "O'qituvchi nutqi", count: speaking.teacher },
+    { name: "O'quvchi nutqi", count: speaking.student },
+  ];
+
+  const dist = D.distribution || { excellent: 0, good: 0, average: 0, weak: 0 };
+  const distBars = [
+    { label: "A'lo (85+)", key: "excellent", count: dist.excellent, color: "var(--success)" },
+    { label: "Yaxshi (70-84)", key: "good", count: dist.good, color: "var(--brand)" },
+    { label: "O'rtacha (50-69)", key: "average", count: dist.average, color: "var(--warning)" },
+    { label: "Zaif (<50)", key: "weak", count: dist.weak, color: "var(--danger)" },
+  ];
+  const distTotal = distBars.reduce((s, b) => s + b.count, 0) || 1;
+
+  const heatmap = D.heatmap || Array.from({ length: 7 }, () => [0, 0, 0, 0]);
+  const heatMax = Math.max(1, ...heatmap.flat());
+  const dayNames = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+  const slotNames = ["Ertalab", "Tushlik", "Kunduz", "Kechqurun"];
+
+  const alerts = D.alerts || [];
+  const recent = D.recent_lessons || [];
 
   body.innerHTML = `
-    <div class="card" style="margin-bottom:16px">
+    <!-- Sifat gauge + AI yordamchi -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Umumiy dars sifati</div>
+            <div class="card-subtitle">${D.criteria_count || 0} ta baholangan dars · 5 pedagogik mezon</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="quality-wrap">
+            <div class="quality-gauge">${gaugeRing(engagement)}</div>
+            <div class="criteria-list">
+              ${critList.map(c => `
+                <div class="crit-row">
+                  <div class="crit-top">
+                    <span class="crit-name">${escapeHtml(c.label)}</span>
+                    <span class="crit-val">${c.value.toFixed(1)}<span class="crit-max">/20</span></span>
+                  </div>
+                  <div class="crit-bar-wrap"><div class="crit-bar" style="width:${c.pct}%;background:${c.color}"></div></div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card ai-card">
+        <div class="card-header">
+          <div class="ai-head">
+            <span class="ai-badge">AI</span>
+            <div>
+              <div class="card-title">AI yordamchi</div>
+              <div class="card-subtitle">Ma'lumotlarga asoslangan xulosa</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="ai-metric">
+            <div class="ai-metric-lbl">O'rtacha AI baho</div>
+            <div class="ai-metric-val">${engagement}% <span class="ai-tag ${scoreColor(engagement)}">${qualityLabel(engagement)}</span></div>
+          </div>
+          <div class="ai-facts">
+            <div class="ai-fact"><span class="dot ok"></span> Eng kuchli: <b>${escapeHtml(strongest?.label || "—")}</b> · ${strongest?.pct || 0}%</div>
+            <div class="ai-fact"><span class="dot warn"></span> Zaif tomon: <b>${escapeHtml(weakest?.label || "—")}</b> · ${weakest?.pct || 0}%</div>
+          </div>
+          <div class="ai-reco">
+            <div class="ai-reco-title">${I.trending} Tavsiya</div>
+            <p>${escapeHtml(CRITERIA_ADVICE[weakest?.key] || "Darslarni yozib, baholashni davom ettiring — tahlil boyiydi.")}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sifat trendi + so'zlash balansi -->
+    <div class="dash-grid">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Dars sifati trendi</div>
+            <div class="card-subtitle">Baholangan darslar bo'yicha o'rtacha ball</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          ${lineChart(trendVals.length ? trendVals : [0, 0, 0, 0, 0], trendLabels)}
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background:var(--brand)"></span>O'rtacha ball</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">So'zlash balansi</div>
+            <div class="card-subtitle">O'qituvchi / o'quvchi nutqi (baho)</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          ${donutChart(speakItems)}
+          <div class="donut-rows">
+            ${speakItems.map((d, i) => `
+              <div class="donut-row">
+                <span class="sw" style="background:${donutColor(i)}"></span>
+                <span class="nm">${escapeHtml(d.name)}</span>
+                <span class="vl">${d.count}%</span>
+                <span class="pc"></span>
+              </div>
+            `).join("")}
+          </div>
+          <div class="chart-note">Interaktivlik bahosidan hisoblangan taxminiy nisbat</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Haftalik faollik xaritasi + sifat taqsimoti -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Haftalik faollik xaritasi</div>
+            <div class="card-subtitle">Kun va vaqt bo'yicha yozilgan darslar</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="heatmap">
+            <div class="heat-corner"></div>
+            ${slotNames.map(s => `<div class="heat-colh">${s}</div>`).join("")}
+            ${heatmap.map((row, di) => `
+              <div class="heat-rowh">${dayNames[di]}</div>
+              ${row.map((v, si) => `<div class="heat-cell" title="${dayNames[di]} · ${slotNames[si]}: ${v} dars" style="--i:${(v / heatMax).toFixed(2)}">${v || ""}</div>`).join("")}
+            `).join("")}
+          </div>
+          <div class="heat-legend"><span>Kam</span><span class="heat-scale"></span><span>Ko'p</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Sifat taqsimoti</div>
+            <div class="card-subtitle">Baholangan darslar darajasi</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="dist-list">
+            ${distBars.map(b => `
+              <div class="dist-row">
+                <div class="dist-top"><span class="dist-name"><span class="sw" style="background:${b.color}"></span>${escapeHtml(b.label)}</span><span class="dist-val">${b.count}</span></div>
+                <div class="dist-bar-wrap"><div class="dist-bar" style="width:${Math.round((b.count / distTotal) * 100)}%;background:${b.color}"></div></div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Muassasa tuzilmasi -->
+    <div class="card" style="margin-bottom:20px">
       <div class="card-header">
         <div>
           <div class="card-title">Muassasa tuzilmasi</div>
@@ -656,46 +913,52 @@ function renderDashBody(sortedTeachers, teachers, students, groups, levelCounts 
       </div>
     </div>
 
-    <div class="dash-grid">
-      <div class="card chart-card">
+    <!-- Ogohlantirishlar + tavsiyalar + top o'qituvchilar -->
+    <div class="dash-grid-3">
+      <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">Faollik trendi</div>
-            <div class="card-subtitle">O'qituvchilar o'rtacha ball dinamikasi</div>
+            <div class="card-title">AI ogohlantirishlar</div>
+            <div class="card-subtitle">E'tibor talab qiladi</div>
           </div>
+          ${alerts.length ? `<span class="pill danger">${alerts.length}</span>` : ""}
         </div>
-        <div class="chart-wrap">
-          ${lineChart(trendPoints)}
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--brand)"></span>O'rtacha ball</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Fan/soha bo'yicha taqsimot</div>
-            <div class="card-subtitle">O'qituvchilar soni</div>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          ${donutChart(dist)}
-          <div class="donut-rows">
-            ${dist.map((d, i) => `
-              <div class="donut-row">
-                <span class="sw" style="background:${donutColor(i)}"></span>
-                <span class="nm">${escapeHtml(d.name)}</span>
-                <span class="vl">${d.count}</span>
-                <span class="pc">${Math.round(d.count / teachers.length * 100) || 0}%</span>
+        <div class="card-body" style="padding:0">
+          ${alerts.length === 0
+            ? `<div class="empty-note">${I.ok} Past ballli o'qituvchilar yo'q</div>`
+            : alerts.map(a => `
+              <div class="alert-row" data-tid="${a.teacher_id}">
+                <span class="alert-ico ${a.level}">${I.warn}</span>
+                <div class="alert-body">
+                  <div class="alert-title">${escapeHtml(a.teacher_name)}</div>
+                  <div class="alert-sub">O'rtacha baho past · ${a.lessons} dars</div>
+                </div>
+                <span class="score-chip ${scoreColor(a.score)}">${a.score}%</span>
               </div>
-            `).join("") || `<div class="donut-row"><span></span><span class="nm" style="font-style:italic;color:var(--text-faint)">Ma'lumot yo'q</span><span></span><span></span></div>`}
-          </div>
+            `).join("")}
         </div>
       </div>
-    </div>
 
-    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">AI tavsiyalar</div>
+            <div class="card-subtitle">Sifatni oshirish uchun</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          ${sortedCrit.slice().reverse().slice(0, 4).map(c => `
+            <div class="reco-row">
+              <span class="reco-ico" style="color:${c.color}">${I.info}</span>
+              <div class="reco-body">
+                <div class="reco-title">${escapeHtml(c.label)} · ${c.pct}%</div>
+                <div class="reco-sub">${escapeHtml(CRITERIA_ADVICE[c.key])}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <div>
@@ -706,14 +969,12 @@ function renderDashBody(sortedTeachers, teachers, students, groups, levelCounts 
         </div>
         <div class="card-body">
           <div class="rank-list">
-            ${topN.length === 0 ? `<div style="color:var(--text-subtle);font-size:13px">Ma'lumot yo'q</div>` : topN.map((t, i) => `
-              <div class="rank-item">
+            ${topN.length === 0 ? `<div class="empty-note">Ma'lumot yo'q</div>` : topN.map((t, i) => `
+              <div class="rank-item rank-click" data-tid="${t.user_id}">
                 <div class="idx">#${i + 1}</div>
                 <div class="body">
                   <div class="nm">${escapeHtml(t.name)}</div>
-                  <div class="rank-bar-wrap">
-                    <div class="rank-bar" style="width:${Math.max(4, (t.average_score / maxScore * 100))}%"></div>
-                  </div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.max(4, (t.average_score / maxScore * 100))}%"></div></div>
                 </div>
                 <div class="v">${t.average_score}%</div>
               </div>
@@ -721,35 +982,65 @@ function renderDashBody(sortedTeachers, teachers, students, groups, levelCounts 
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- So'nggi darslar + faoliyat tarixi -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">So'nggi darslar</div>
+            <div class="card-subtitle">Oxirgi baholangan darslar</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          ${recent.length === 0
+            ? `<div class="empty-note">Hozircha dars yo'q</div>`
+            : recent.map(l => `
+              <div class="lesson-row" data-lid="${l.id}" style="grid-template-columns:36px 1fr auto;cursor:pointer">
+                <div class="l-icon">${I.mic}</div>
+                <div class="l-main">
+                  <div class="l-title">${escapeHtml(l.topic || "Dars")}</div>
+                  <div class="l-sub">${escapeHtml(l.teacher_name || "")}${l.group_name ? " · " + escapeHtml(l.group_name) : ""}</div>
+                </div>
+                <span class="score-chip ${scoreColor(l.score)}">${l.score}%</span>
+              </div>
+            `).join("")}
+        </div>
+      </div>
 
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">So'nggi o'qituvchilar</div>
-            <div class="card-subtitle">Yangi qo'shilgan</div>
+            <div class="card-title">Faoliyat tarixi</div>
+            <div class="card-subtitle">So'nggi voqealar</div>
           </div>
         </div>
-        <div class="card-body" style="padding:0">
-          ${[...teachers].reverse().slice(0, 5).map(t => `
-            <div class="lesson-row" data-id="${t.user_id}" style="grid-template-columns:36px 1fr auto;cursor:pointer">
-              <div class="l-icon">${I.teachers}</div>
-              <div class="l-main">
-                <div class="l-title">${escapeHtml(t.name)}</div>
-                <div class="l-sub">${escapeHtml(t.course_type || "O'qituvchi")}</div>
-              </div>
-              <span class="score-chip ${scoreColor(t.average_score)}">${t.average_score}%</span>
-            </div>
-          `).join("") || `<div style="padding:16px;color:var(--text-subtle);font-size:13px">Bo'sh</div>`}
+        <div class="card-body">
+          ${recent.length === 0
+            ? `<div class="empty-note">Faoliyat yo'q</div>`
+            : `<div class="timeline">${recent.map(l => `
+                <div class="tl-item">
+                  <div class="tl-dot ${scoreColor(l.score)}"></div>
+                  <div class="tl-body">
+                    <div class="tl-title"><b>${escapeHtml(l.teacher_name || "O'qituvchi")}</b> "${escapeHtml(l.topic || "dars")}" darsini yakunladi</div>
+                    <div class="tl-meta">${escapeHtml(fmtDate(l.created_at))} · ${l.score}% baho</div>
+                  </div>
+                </div>
+              `).join("")}</div>`}
         </div>
       </div>
     </div>
   `;
-  document.getElementById("see-all-t")?.addEventListener("click", () => route("teachers"));
-  body.querySelectorAll(".lesson-row[data-id]").forEach(el => {
-    el.addEventListener("click", () => route("teacher", { id: parseInt(el.dataset.id) }));
-  });
 
-  // Hierarchy summary cards — clickable to jump to that level / groups list.
+  document.getElementById("see-all-t")?.addEventListener("click", () => route("teachers"));
+  body.querySelectorAll(".lesson-row[data-lid]").forEach(el => {
+    el.addEventListener("click", () => route("teacher", { id: parseInt(el.dataset.lid) }));
+  });
+  body.querySelectorAll(".alert-row[data-tid], .rank-click[data-tid]").forEach(el => {
+    el.style.cursor = "pointer";
+    el.addEventListener("click", () => route("teacher", { id: parseInt(el.dataset.tid) }));
+  });
   body.querySelectorAll(".hier-step-clickable").forEach((el) => {
     const dest = el.getAttribute("data-route");
     if (!dest) return;
@@ -758,6 +1049,31 @@ function renderDashBody(sortedTeachers, teachers, students, groups, levelCounts 
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); route(dest); }
     });
   });
+}
+
+function qualityLabel(pct) {
+  if (pct >= 85) return "A'lo";
+  if (pct >= 70) return "Yaxshi";
+  if (pct >= 50) return "O'rtacha";
+  if (pct > 0) return "Zaif";
+  return "Ma'lumot yo'q";
+}
+
+// Circular quality gauge with centered percentage + label.
+function gaugeRing(pct) {
+  const r = 74, cx = 90, cy = 90, sw = 15;
+  const C = 2 * Math.PI * r;
+  const dash = Math.max(0, Math.min(100, pct)) / 100 * C;
+  return `<svg class="gauge" viewBox="0 0 180 180">
+    <defs><linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563EB"/><stop offset="55%" stop-color="#6366F1"/><stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-subtle)" stroke-width="${sw}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#gauge-grad)" stroke-width="${sw}" stroke-linecap="round"
+      stroke-dasharray="${dash.toFixed(1)} ${(C - dash).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+    <text class="gauge-val" x="${cx}" y="${cy - 2}" text-anchor="middle">${pct}%</text>
+    <text class="gauge-lbl" x="${cx}" y="${cy + 24}" text-anchor="middle">${qualityLabel(pct)}</text>
+  </svg>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -776,7 +1092,7 @@ function buildTrendPoints(scores) {
   return pts;
 }
 
-function lineChart(points) {
+function lineChart(points, labelsArr) {
   const W = 600, H = 200, P = 30;
   const max = Math.max(100, Math.max(...points));
   const scaleX = (i) => P + (i * (W - P * 2)) / (points.length - 1 || 1);
@@ -788,8 +1104,10 @@ function lineChart(points) {
     <text class="axis-label" x="${P - 6}" y="${scaleY(v) + 3}" text-anchor="end">${v}</text>
   `).join("");
   const dots = points.map((v, i) => `<circle class="dot" cx="${scaleX(i)}" cy="${scaleY(v)}" r="3"/>`).join("");
-  const labels = ["1h", "2h", "3h", "4h", "5h", "6h", "7h"].map((lb, i) => `
-    <text class="axis-label" x="${scaleX(i)}" y="${H - 8}" text-anchor="middle">${lb}</text>
+  const defaultLabels = ["1h", "2h", "3h", "4h", "5h", "6h", "7h"];
+  const lbArr = (labelsArr && labelsArr.length) ? labelsArr : defaultLabels;
+  const labels = points.map((_, i) => `
+    <text class="axis-label" x="${scaleX(i)}" y="${H - 8}" text-anchor="middle">${escapeHtml(lbArr[i] ?? "")}</text>
   `).join("");
   return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">

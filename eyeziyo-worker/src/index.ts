@@ -274,6 +274,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       if (path === "/api/admin/stats" && method === "GET") {
         return handleGetStats(request, env);
       }
+      if (path === "/api/admin/dashboard" && method === "GET") {
+        return handleGetDashboard(request, env);
+      }
 
       const teacherDetailMatch = path.match(/^\/api\/admin\/teachers\/(\d+)\/detail$/);
       if (teacherDetailMatch && method === "GET") {
@@ -1122,6 +1125,144 @@ async function handleGetStats(request: Request, env: Env): Promise<Response> {
     total_test_attempts: attempts?.c || 0,
     average_test_score: Math.round((attempts?.avg as number) || 0),
     lessons_today: 0,
+  });
+}
+
+// Rich dashboard payload — per-criterion averages, trend, weekly activity
+// heatmap, quality distribution, recent lessons and low-score alerts.
+// Everything is aggregated read-only from real evaluations/lessons.
+async function handleGetDashboard(request: Request, env: Env): Promise<Response> {
+  const [admin, err] = await requireAdmin(request, env);
+  if (err) return err;
+
+  const instId = admin.institution_id;
+  const instRow = instId ? await env.DB.prepare("SELECT type FROM institutions WHERE id = ?").bind(instId).first() : null;
+  const instType = (instRow?.type as string) || null;
+
+  // Per-criterion averages (each 0-20) across all institution evaluations.
+  const crit = await env.DB.prepare(`
+    SELECT COUNT(*) AS c,
+           AVG(e.topic_score) AS topic, AVG(e.speech_score) AS speech,
+           AVG(e.method_score) AS method, AVG(e.interaction_score) AS interaction,
+           AVG(e.feedback_score) AS feedback
+    FROM evaluations e
+    JOIN lessons l ON l.id = e.lesson_id
+    JOIN users u ON u.id = l.user_id
+    WHERE u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+  `).bind(instId, instType).first();
+
+  const round1 = (v: any) => Math.round(((v as number) || 0) * 10) / 10;
+  const criteria = {
+    topic: round1(crit?.topic),
+    speech: round1(crit?.speech),
+    method: round1(crit?.method),
+    interaction: round1(crit?.interaction),
+    feedback: round1(crit?.feedback),
+  };
+  const criteriaCount = (crit?.c as number) || 0;
+
+  // Recent evaluated lessons (institution-wide).
+  const recentRows = await env.DB.prepare(`
+    SELECT l.id, l.topic, l.group_name, l.course_type, l.created_at,
+           u.name AS teacher_name, e.overall_score
+    FROM lessons l
+    JOIN users u ON u.id = l.user_id
+    LEFT JOIN evaluations e ON e.lesson_id = l.id
+    WHERE u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+    ORDER BY l.created_at DESC LIMIT 6
+  `).bind(instId, instType).all();
+  const recent_lessons = recentRows.results.map((r: any) => ({
+    id: r.id, topic: r.topic, group_name: r.group_name,
+    course_type: r.course_type, teacher_name: r.teacher_name,
+    score: Math.round((r.overall_score as number) || 0),
+    created_at: r.created_at,
+  }));
+
+  // Raw evaluated lessons (last ~120 days) for trend + heatmap + distribution.
+  const evalRows = await env.DB.prepare(`
+    SELECT l.created_at AS created_at, e.overall_score AS score
+    FROM evaluations e
+    JOIN lessons l ON l.id = e.lesson_id
+    JOIN users u ON u.id = l.user_id
+    WHERE u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+    ORDER BY l.created_at ASC
+  `).bind(instId, instType).all();
+
+  const rows = evalRows.results as any[];
+
+  // Quality distribution by band.
+  const distribution = { excellent: 0, good: 0, average: 0, weak: 0 };
+  for (const r of rows) {
+    const s = (r.score as number) || 0;
+    if (s >= 85) distribution.excellent++;
+    else if (s >= 70) distribution.good++;
+    else if (s >= 50) distribution.average++;
+    else distribution.weak++;
+  }
+
+  // Weekly score trend — split the evaluated lessons into up to 8 ordered
+  // buckets and average each; gives a stable dynamic line from real data.
+  const N = 8;
+  const score_trend: { label: string; value: number }[] = [];
+  if (rows.length > 0) {
+    const per = Math.ceil(rows.length / N);
+    for (let i = 0; i < N; i++) {
+      const slice = rows.slice(i * per, i * per + per);
+      if (!slice.length) continue;
+      const avg = slice.reduce((s, r) => s + ((r.score as number) || 0), 0) / slice.length;
+      score_trend.push({ label: `${i + 1}`, value: Math.round(avg) });
+    }
+  }
+
+  // Weekly activity heatmap: day-of-week (Mon..Sun) x 4 time slots.
+  // Slots: 0=ertalab(6-10), 1=tush(10-14), 2=kunduz(14-18), 3=kech(18-22).
+  const heatmap: number[][] = Array.from({ length: 7 }, () => [0, 0, 0, 0]);
+  for (const r of rows) {
+    const d = new Date((r.created_at as string).replace(" ", "T") + "Z");
+    if (isNaN(d.getTime())) continue;
+    const dow = (d.getUTCDay() + 6) % 7; // Mon=0 .. Sun=6
+    const h = d.getUTCHours();
+    let slot = 0;
+    if (h >= 18) slot = 3;
+    else if (h >= 14) slot = 2;
+    else if (h >= 10) slot = 1;
+    else slot = 0;
+    heatmap[dow][slot]++;
+  }
+
+  // Low-score teacher alerts (avg overall < 60), worst first.
+  const alertRows = await env.DB.prepare(`
+    SELECT u.id, u.name, AVG(e.overall_score) AS avg_score, COUNT(e.id) AS n
+    FROM users u
+    JOIN lessons l ON l.user_id = u.id
+    JOIN evaluations e ON e.lesson_id = l.id
+    WHERE u.role = 'teacher' AND u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+    GROUP BY u.id
+    HAVING avg_score < 60
+    ORDER BY avg_score ASC LIMIT 5
+  `).bind(instId, instType).all();
+  const alerts = alertRows.results.map((a: any) => ({
+    teacher_id: a.id, teacher_name: a.name,
+    score: Math.round((a.avg_score as number) || 0),
+    lessons: (a.n as number) || 0,
+    level: ((a.avg_score as number) || 0) < 45 ? "danger" : "warning",
+  }));
+
+  // Teacher/student speaking split estimate from average interaction score.
+  // interaction 0..20 → student share 22%..48% (higher interaction ⇒ more
+  // student talk). Purely derived indicator, not a raw recording metric.
+  const studentShare = Math.round(22 + (criteria.interaction / 20) * 26);
+
+  return json({
+    criteria,
+    criteria_count: criteriaCount,
+    recent_lessons,
+    score_trend,
+    distribution,
+    heatmap,
+    alerts,
+    speaking: { teacher: 100 - studentShare, student: studentShare },
+    evaluated_lessons: rows.length,
   });
 }
 
