@@ -2261,6 +2261,10 @@ function renderTeachersBody() {
     return true;
   });
   filtered.sort((a, b) => {
+    // Darsi (demo darslari) bor o'qituvchilar doim ro'yxat boshida turadi
+    const aHas = (a.total_lessons || 0) > 0 ? 1 : 0;
+    const bHas = (b.total_lessons || 0) > 0 ? 1 : 0;
+    if (aHas !== bHas) return bHas - aHas;
     if (sort === "score") return b.average_score - a.average_score;
     if (sort === "lessons") return b.total_lessons - a.total_lessons;
     if (sort === "name") return a.name.localeCompare(b.name);
