@@ -445,7 +445,7 @@ export async function evaluateLesson(
     ? transcript.slice(0, maxChars * 0.3) + "\n[...]\n" + transcript.slice(-maxChars * 0.3)
     : transcript;
 
-  const prompt = `Sen tajribali ta'lim ekspertisan. O'qituvchi darsini transkript asosida diqqat bilan baholab, maslahatlar ber.
+  const prompt = `Sen pedagogika fanlari bo'yicha tajribali metodist-ekspertsan. O'qituvchi darsini transkript asosida diqqat bilan baholab, professional metodik tavsiyalar ber.
 
 DARS: ${courseType} · ${topic} · ${durationMinutes} daqiqa
 
@@ -467,6 +467,13 @@ QAT'IY:
 - overall_score AYNAN 5 mezon yig'indisiga teng bo'lsin.
 ${durationMinutes <= 2 ? "- BU JUDA QISQA DARS (≤2 daqiqa) — har bir mezon 8 dan oshmasin." : ""}
 
+TAVSIYALAR (advice) TALABLARI:
+- Kamida 5, ko'pi bilan 7 ta tavsiya yoz.
+- Har bir tavsiya professional metodik tilda, aniq va amaliy bo'lsin: nimani, qanday usul bilan va qanday natija kutilishini ko'rsat.
+- Umumiy gaplardan (\"darsni yaxshilang\") qoch — transkriptdagi aniq holatlarga tayangan, zamonaviy pedagogik metodlarga (interfaol usullar, formativ baholash, faol o'qitish strategiyalari) asoslangan tavsiyalar ber.
+- Eng past ball olgan mezonlarga alohida e'tibor qarat.
+- strengths va improvements uchun ham kamida 3 tadan band yoz.
+
 JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qaytar:
 {
   "topic_score": <0-20 butun son>,
@@ -476,12 +483,12 @@ JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qa
   "feedback_score": <0-20 butun son>,
   "overall_score": <0-100 butun son (5 mezon yig'indisi)>,
   "summary": "<2-3 gap dars haqida xulosa>",
-  "strengths": ["<kuchli tomon 1>", "<kuchli tomon 2>"],
-  "improvements": ["<yaxshilash kerak bo'lgan joy 1>", "<yaxshilash kerak bo'lgan joy 2>"],
-  "advice": ["<aniq maslahat 1>", "<aniq maslahat 2>"]
+  "strengths": ["<kuchli tomon 1>", "<kuchli tomon 2>", "<kuchli tomon 3>"],
+  "improvements": ["<yaxshilash kerak bo'lgan joy 1>", "<yaxshilash kerak bo'lgan joy 2>", "<yaxshilash kerak bo'lgan joy 3>"],
+  "advice": ["<professional metodik tavsiya 1>", "<tavsiya 2>", "<tavsiya 3>", "<tavsiya 4>", "<tavsiya 5>"]
 }`;
 
-  const raw = await callGemini(apiKey, prompt, { temperature: 0.3, maxTokens: 2048, timeoutMs: 60000 });
+  const raw = await callGemini(apiKey, prompt, { temperature: 0.3, maxTokens: 4096, timeoutMs: 60000 });
   if (!raw) return empty;
 
   try {
