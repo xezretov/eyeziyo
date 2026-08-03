@@ -468,11 +468,11 @@ QAT'IY:
 ${durationMinutes <= 2 ? "- BU JUDA QISQA DARS (≤2 daqiqa) — har bir mezon 8 dan oshmasin." : ""}
 
 TAVSIYALAR (advice) TALABLARI:
-- Kamida 5, ko'pi bilan 7 ta tavsiya yoz.
+- Kamida 8, ko'pi bilan 12 ta tavsiya yoz — har bir mezon (mavzu, nutq, metodika, interaktivlik, baholash) bo'yicha kamida bittadan tavsiya bo'lsin.
 - Har bir tavsiya professional metodik tilda, aniq va amaliy bo'lsin: nimani, qanday usul bilan va qanday natija kutilishini ko'rsat.
 - Umumiy gaplardan (\"darsni yaxshilang\") qoch — transkriptdagi aniq holatlarga tayangan, zamonaviy pedagogik metodlarga (interfaol usullar, formativ baholash, faol o'qitish strategiyalari) asoslangan tavsiyalar ber.
 - Eng past ball olgan mezonlarga alohida e'tibor qarat.
-- strengths va improvements uchun ham kamida 3 tadan band yoz.
+- strengths va improvements uchun ham kamida 4 tadan band yoz.
 
 JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qaytar:
 {
@@ -485,10 +485,10 @@ JAVOB FORMATI — faqat JSON, boshqa hech narsa yo'q. Quyidagi shema bo'yicha qa
   "summary": "<2-3 gap dars haqida xulosa>",
   "strengths": ["<kuchli tomon 1>", "<kuchli tomon 2>", "<kuchli tomon 3>"],
   "improvements": ["<yaxshilash kerak bo'lgan joy 1>", "<yaxshilash kerak bo'lgan joy 2>", "<yaxshilash kerak bo'lgan joy 3>"],
-  "advice": ["<professional metodik tavsiya 1>", "<tavsiya 2>", "<tavsiya 3>", "<tavsiya 4>", "<tavsiya 5>"]
+  "advice": ["<professional metodik tavsiya 1>", "<tavsiya 2>", "<tavsiya 3>", "<tavsiya 4>", "<tavsiya 5>", "<tavsiya 6>", "<tavsiya 7>", "<tavsiya 8>"]
 }`;
 
-  const raw = await callGemini(apiKey, prompt, { temperature: 0.3, maxTokens: 4096, timeoutMs: 60000 });
+  const raw = await callGemini(apiKey, prompt, { temperature: 0.3, maxTokens: 8192, timeoutMs: 60000 });
   if (!raw) return empty;
 
   try {
