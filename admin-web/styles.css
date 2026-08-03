@@ -991,6 +991,35 @@ svg.gauge .gauge-lbl { fill: var(--text-subtle); font-size: 13px; font-weight: 6
 /* Alerts + recommendations rows */
 .pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
 .pill.danger { background: var(--danger-50); color: var(--danger); }
+.pill.warning { background: var(--warning-50); color: var(--warning); }
+
+/* Weekly dynamics + coverage insight cards */
+.wk-list { display: flex; flex-direction: column; }
+.wk-row {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "label val" "prev delta";
+  align-items: baseline; column-gap: 12px; row-gap: 2px;
+  padding: 12px 0; border-bottom: 1px solid var(--divider);
+}
+.wk-row:first-child { padding-top: 4px; }
+.wk-row:last-child { border-bottom: none; padding-bottom: 4px; }
+.wk-label { grid-area: label; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.wk-val { grid-area: val; font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.wk-row .kpi-delta { grid-area: delta; justify-self: end; margin-top: 0; }
+.wk-prev { grid-area: prev; font-size: 12px; color: var(--text-subtle); }
+
+.cov-list { display: flex; flex-direction: column; gap: 16px; }
+.cov-row { display: flex; flex-direction: column; gap: 6px; }
+.cov-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); }
+.cov-top b { color: var(--text); font-variant-numeric: tabular-nums; }
+.cov-pct { font-size: 12px; font-weight: 600; color: var(--text-subtle); align-self: flex-end; }
+.cov-note {
+  margin-top: 14px; padding: 10px 12px; border-radius: var(--radius);
+  background: var(--warning-50); color: var(--warning); font-size: 12.5px; line-height: 1.5;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.cov-note svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+
+.rank-meta { font-size: 12px; font-weight: 500; color: var(--text-subtle); }
 .empty-note {
   padding: 22px 18px; text-align: center; font-size: 13px; color: var(--text-subtle);
   display: flex; align-items: center; justify-content: center; gap: 8px;
