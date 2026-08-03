@@ -295,6 +295,15 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return handleAdminLessonDetail(request, env, parseInt(adminLessonMatch[1]));
       }
 
+      // ── Admin: re-run AI evaluation on a stored transcript ──
+      const reevalMatch = path.match(/^\/api\/admin\/lessons\/(\d+)\/reevaluate$/);
+      if (reevalMatch && method === "POST") {
+        return handleAdminLessonReevaluate(request, env, parseInt(reevalMatch[1]));
+      }
+      if (path === "/api/admin/lessons/reevaluate-batch" && method === "POST") {
+        return handleAdminReevaluateBatch(request, env);
+      }
+
       // ── Admin: student detail + stats ──
       if (path === "/api/admin/students" && method === "GET") {
         const [admin, aerr] = await requireAdmin(request, env);
@@ -1505,6 +1514,102 @@ async function handleAdminLessonDetail(request: Request, env: Env, lessonId: num
     } : null,
     student_evaluations: questionSummaries,
   });
+}
+
+async function reevaluateLessonRow(env: Env, lesson: any): Promise<LessonEvaluationResult> {
+  const durationMinutes = Math.max(1, Math.round(((lesson.duration_seconds as number) || 0) / 60));
+  const evaluation = await evaluateLesson(
+    env.GEMINI_API_KEY,
+    (lesson.transcript as string) || "",
+    (lesson.course_type as string) || "",
+    (lesson.topic as string) || "",
+    durationMinutes
+  );
+  if (!evaluation.overall_score && !evaluation.summary) return { ok: false };
+  await env.DB.prepare(`
+    INSERT OR REPLACE INTO evaluations
+    (lesson_id, overall_score, topic_score, speech_score, method_score, interaction_score, feedback_score, summary, strengths, improvements, advice)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    lesson.id,
+    evaluation.overall_score,
+    evaluation.topic_score,
+    evaluation.speech_score,
+    evaluation.method_score,
+    evaluation.interaction_score,
+    evaluation.feedback_score,
+    evaluation.summary,
+    JSON.stringify(evaluation.strengths),
+    JSON.stringify(evaluation.improvements),
+    JSON.stringify(evaluation.advice)
+  ).run();
+  return { ok: true, evaluation };
+}
+
+type LessonEvaluationResult = { ok: boolean; evaluation?: Awaited<ReturnType<typeof evaluateLesson>> };
+
+async function handleAdminLessonReevaluate(request: Request, env: Env, lessonId: number): Promise<Response> {
+  const [admin, err] = await requireAdmin(request, env);
+  if (err) return err;
+  if (!env.GEMINI_API_KEY) return json({ detail: "Gemini API kaliti sozlanmagan" }, 503);
+
+  const lesson = await env.DB.prepare(`
+    SELECT l.* FROM lessons l JOIN users u ON l.user_id = u.id
+    WHERE l.id = ? AND u.institution_id = ?
+  `).bind(lessonId, admin.institution_id).first();
+  if (!lesson) return json({ detail: "Dars topilmadi" }, 404);
+  if (!lesson.transcript || String(lesson.transcript).trim().length < 20) {
+    return json({ detail: "Bu darsda transkripsiya yo'q — qayta tahlil qilib bo'lmaydi" }, 400);
+  }
+
+  const res = await reevaluateLessonRow(env, lesson);
+  if (!res.ok) return json({ detail: "AI tahlili muvaffaqiyatsiz tugadi, keyinroq urinib ko'ring" }, 502);
+  return json({ lesson_id: lessonId, evaluation: res.evaluation });
+}
+
+// Re-evaluates up to `limit` lessons (per admin's institution) whose stored
+// evaluation has fewer than 5 advice items. Returns the remaining count so the
+// caller can loop until done.
+async function handleAdminReevaluateBatch(request: Request, env: Env): Promise<Response> {
+  const [admin, err] = await requireAdmin(request, env);
+  if (err) return err;
+  if (!env.GEMINI_API_KEY) return json({ detail: "Gemini API kaliti sozlanmagan" }, 503);
+
+  let limit = 3;
+  try {
+    const body = (await request.json()) as any;
+    if (body && Number.isFinite(Number(body.limit))) limit = Math.max(1, Math.min(5, Math.round(Number(body.limit))));
+  } catch { /* empty body is fine */ }
+
+  const staleWhere = `
+    l.transcript IS NOT NULL AND length(trim(l.transcript)) >= 20
+    AND u.institution_id = ?
+    AND e.lesson_id IS NOT NULL
+    AND json_array_length(COALESCE(e.advice, '[]')) < 5
+  `;
+  const candidates = await env.DB.prepare(`
+    SELECT l.* FROM lessons l
+    JOIN users u ON l.user_id = u.id
+    LEFT JOIN evaluations e ON e.lesson_id = l.id
+    WHERE ${staleWhere}
+    ORDER BY l.id LIMIT ?
+  `).bind(admin.institution_id, limit).all();
+
+  const done: number[] = [];
+  const failed: number[] = [];
+  for (const lesson of candidates.results) {
+    const res = await reevaluateLessonRow(env, lesson);
+    (res.ok ? done : failed).push(lesson.id as number);
+  }
+
+  const remaining = await env.DB.prepare(`
+    SELECT COUNT(*) AS n FROM lessons l
+    JOIN users u ON l.user_id = u.id
+    LEFT JOIN evaluations e ON e.lesson_id = l.id
+    WHERE ${staleWhere}
+  `).bind(admin.institution_id).first();
+
+  return json({ done, failed, remaining: (remaining?.n as number) || 0 });
 }
 
 async function handleUpdateGroups(request: Request, env: Env, teacherId: number): Promise<Response> {
