@@ -754,6 +754,126 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
   const alerts = D.alerts || [];
   const recent = D.recent_lessons || [];
 
+  const week = D.week || null;
+  const coverage = D.coverage || null;
+  const idleTeachers = D.idle_teachers || [];
+  const groupPerf = D.group_perf || [];
+  const covPct = coverage && coverage.total_teachers
+    ? Math.round((coverage.with_lessons / coverage.total_teachers) * 100) : 0;
+  const activePct = coverage && coverage.total_teachers
+    ? Math.round((coverage.active_7d / coverage.total_teachers) * 100) : 0;
+  const maxGroupScore = groupPerf[0]?.average_score || 100;
+
+  const weekDelta = (m, suffix = "") => {
+    const d = (m?.current || 0) - (m?.previous || 0);
+    if (d === 0) return `<span class="kpi-delta">o'zgarishsiz</span>`;
+    return `<span class="kpi-delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${Math.abs(d)}${suffix}</span>`;
+  };
+  const weekRows = week ? [
+    { label: "Yozilgan darslar", m: week.lessons, suffix: "" },
+    { label: "O'rtacha AI baho", m: week.avg_score, suffix: "%", isPct: true },
+    { label: "Jami vaqt (min)", m: week.minutes, suffix: "" },
+  ] : [];
+
+  const insightsSection = (week || coverage) ? `
+    <div class="dash-grid-3">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Haftalik dinamika</div>
+            <div class="card-subtitle">Bu hafta va o'tgan hafta solishtiruvi</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="wk-list">
+            ${weekRows.map(r => `
+              <div class="wk-row">
+                <div class="wk-label">${escapeHtml(r.label)}</div>
+                <div class="wk-val">${r.m?.current ?? 0}${r.isPct ? "%" : ""}</div>
+                ${weekDelta(r.m, r.suffix)}
+                <div class="wk-prev">o'tgan: ${r.m?.previous ?? 0}${r.isPct ? "%" : ""}</div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">O'qituvchilar qamrovi</div>
+            <div class="card-subtitle">Platformadan real foydalanish darajasi</div>
+          </div>
+        </div>
+        <div class="card-body">
+          ${coverage ? `
+            <div class="cov-list">
+              <div class="cov-row">
+                <div class="cov-top"><span>Kamida 1 dars yozganlar</span><b>${coverage.with_lessons} / ${coverage.total_teachers}</b></div>
+                <div class="crit-bar-wrap"><div class="crit-bar" style="width:${covPct}%;background:var(--brand)"></div></div>
+                <div class="cov-pct">${covPct}%</div>
+              </div>
+              <div class="cov-row">
+                <div class="cov-top"><span>So'nggi 7 kunda faol</span><b>${coverage.active_7d} / ${coverage.total_teachers}</b></div>
+                <div class="crit-bar-wrap"><div class="crit-bar" style="width:${activePct}%;background:var(--success)"></div></div>
+                <div class="cov-pct">${activePct}%</div>
+              </div>
+            </div>
+            ${covPct < 50 ? `<div class="cov-note">${I.info} O'qituvchilarning katta qismi hali dars yozmagan — ularni platformaga jalb qilish sifat monitoringini kengaytiradi.</div>` : ""}
+          ` : `<div class="empty-note">Ma'lumot yo'q</div>`}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Sustlashgan o'qituvchilar</div>
+            <div class="card-subtitle">14+ kun dars yozmaganlar</div>
+          </div>
+          ${idleTeachers.length ? `<span class="pill warning">${idleTeachers.length}</span>` : ""}
+        </div>
+        <div class="card-body" style="padding:0">
+          ${idleTeachers.length === 0
+            ? `<div class="empty-note">${I.ok} Barcha faol o'qituvchilar muntazam yozmoqda</div>`
+            : idleTeachers.map(t => `
+              <div class="alert-row" data-tid="${t.teacher_id}">
+                <span class="alert-ico warning">${I.clock}</span>
+                <div class="alert-body">
+                  <div class="alert-title">${escapeHtml(t.teacher_name)}</div>
+                  <div class="alert-sub">Oxirgi dars: ${escapeHtml(fmtDate(t.last_lesson_at))} · jami ${t.lessons} dars</div>
+                </div>
+              </div>
+            `).join("")}
+        </div>
+      </div>
+    </div>
+  ` : "";
+
+  const groupPerfCard = groupPerf.length ? `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Guruhlar reytingi</div>
+          <div class="card-subtitle">Baholangan darslar bo'yicha o'rtacha ball</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="rank-list">
+          ${groupPerf.map((g, i) => `
+            <div class="rank-item">
+              <div class="idx">#${i + 1}</div>
+              <div class="body">
+                <div class="nm">${escapeHtml(g.group_name)} <span class="rank-meta">· ${g.lessons} dars</span></div>
+                <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.max(4, (g.average_score / maxGroupScore * 100))}%"></div></div>
+              </div>
+              <div class="v">${g.average_score}%</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  ` : "";
+
   body.innerHTML = `
     <!-- Sifat gauge + AI yordamchi -->
     <div class="dash-grid">
@@ -916,6 +1036,9 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
       </div>
     </div>
 
+    <!-- Haftalik dinamika + qamrov + sustlashganlar -->
+    ${insightsSection}
+
     <!-- Ogohlantirishlar + tavsiyalar + top o'qituvchilar -->
     <div class="dash-grid-3">
       <div class="card">
@@ -987,8 +1110,9 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
       </div>
     </div>
 
-    <!-- So'nggi darslar + faoliyat tarixi -->
-    <div class="dash-grid">
+    <!-- Guruhlar reytingi + so'nggi darslar + faoliyat tarixi -->
+    <div class="${groupPerf.length ? "dash-grid-3" : "dash-grid"}">
+      ${groupPerfCard}
       <div class="card">
         <div class="card-header">
           <div>

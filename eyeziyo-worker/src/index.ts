@@ -1256,6 +1256,77 @@ async function handleGetDashboard(request: Request, env: Env): Promise<Response>
     level: ((a.avg_score as number) || 0) < 45 ? "danger" : "warning",
   }));
 
+  // This week vs previous week: lesson count, evaluated average, minutes.
+  const weekRow = await env.DB.prepare(`
+    SELECT
+      SUM(CASE WHEN l.created_at >= datetime('now','-7 days') THEN 1 ELSE 0 END) AS cur_lessons,
+      SUM(CASE WHEN l.created_at >= datetime('now','-14 days') AND l.created_at < datetime('now','-7 days') THEN 1 ELSE 0 END) AS prev_lessons,
+      SUM(CASE WHEN l.created_at >= datetime('now','-7 days') THEN l.duration_seconds ELSE 0 END) AS cur_sec,
+      SUM(CASE WHEN l.created_at >= datetime('now','-14 days') AND l.created_at < datetime('now','-7 days') THEN l.duration_seconds ELSE 0 END) AS prev_sec,
+      AVG(CASE WHEN l.created_at >= datetime('now','-7 days') THEN e.overall_score END) AS cur_avg,
+      AVG(CASE WHEN l.created_at >= datetime('now','-14 days') AND l.created_at < datetime('now','-7 days') THEN e.overall_score END) AS prev_avg
+    FROM lessons l
+    JOIN users u ON u.id = l.user_id
+    LEFT JOIN evaluations e ON e.lesson_id = l.id
+    WHERE u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+  `).bind(instId, instType).first();
+  const week = {
+    lessons: { current: (weekRow?.cur_lessons as number) || 0, previous: (weekRow?.prev_lessons as number) || 0 },
+    minutes: { current: Math.round(((weekRow?.cur_sec as number) || 0) / 60), previous: Math.round(((weekRow?.prev_sec as number) || 0) / 60) },
+    avg_score: { current: Math.round((weekRow?.cur_avg as number) || 0), previous: Math.round((weekRow?.prev_avg as number) || 0) },
+  };
+
+  // Teacher coverage: how many teachers actually record lessons.
+  const covRow = await env.DB.prepare(`
+    SELECT COUNT(*) AS total,
+           SUM(CASE WHEN last_at IS NOT NULL THEN 1 ELSE 0 END) AS with_lessons,
+           SUM(CASE WHEN last_at >= datetime('now','-7 days') THEN 1 ELSE 0 END) AS active_7d
+    FROM (
+      SELECT u.id, MAX(l.created_at) AS last_at
+      FROM users u
+      LEFT JOIN lessons l ON l.user_id = u.id
+      WHERE u.role = 'teacher' AND u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+      GROUP BY u.id
+    )
+  `).bind(instId, instType).first();
+  const coverage = {
+    total_teachers: (covRow?.total as number) || 0,
+    with_lessons: (covRow?.with_lessons as number) || 0,
+    active_7d: (covRow?.active_7d as number) || 0,
+  };
+
+  // Teachers who used to record but went silent (no lesson for 14+ days).
+  const idleRows = await env.DB.prepare(`
+    SELECT u.id, u.name, MAX(l.created_at) AS last_at, COUNT(l.id) AS n
+    FROM users u
+    JOIN lessons l ON l.user_id = u.id
+    WHERE u.role = 'teacher' AND u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+    GROUP BY u.id
+    HAVING last_at < datetime('now','-14 days')
+    ORDER BY last_at ASC LIMIT 5
+  `).bind(instId, instType).all();
+  const idle_teachers = idleRows.results.map((r: any) => ({
+    teacher_id: r.id, teacher_name: r.name,
+    last_lesson_at: r.last_at, lessons: (r.n as number) || 0,
+  }));
+
+  // Group ranking by evaluated average score.
+  const groupRows = await env.DB.prepare(`
+    SELECT l.group_name, COUNT(DISTINCT l.id) AS n, AVG(e.overall_score) AS avg_score
+    FROM lessons l
+    JOIN users u ON u.id = l.user_id
+    JOIN evaluations e ON e.lesson_id = l.id
+    WHERE u.institution_id = ? AND (u.type IS NULL OR u.type = ?)
+      AND l.group_name IS NOT NULL AND l.group_name != ''
+    GROUP BY l.group_name
+    ORDER BY avg_score DESC LIMIT 6
+  `).bind(instId, instType).all();
+  const group_perf = groupRows.results.map((g: any) => ({
+    group_name: g.group_name,
+    lessons: (g.n as number) || 0,
+    average_score: Math.round((g.avg_score as number) || 0),
+  }));
+
   // Teacher/student speaking split estimate from average interaction score.
   // interaction 0..20 → student share 22%..48% (higher interaction ⇒ more
   // student talk). Purely derived indicator, not a raw recording metric.
@@ -1271,6 +1342,10 @@ async function handleGetDashboard(request: Request, env: Env): Promise<Response>
     alerts,
     speaking: { teacher: 100 - studentShare, student: studentShare },
     evaluated_lessons: rows.length,
+    week,
+    coverage,
+    idle_teachers,
+    group_perf,
   });
 }
 
