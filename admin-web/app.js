@@ -2998,6 +2998,7 @@ async function openLessonDetailModal(lessonId) {
             <div class="la-rec-body"><div class="d">${escapeHtml(s)}</div></div>
           </div>`).join("") : `<div class="la-muted">Tavsiyalar mavjud emas.</div>`}
         <div class="la-rec-foot">${I.info} Tavsiyalar o'qituvchining shaxsiy hisobotida ko'rsatiladi</div>
+        ${d.transcript && d.transcript.trim() ? `<button class="btn-ghost btn-sm" id="reeval-btn" style="margin-top:10px">${I.trending} Qayta tahlil qilish</button>` : ""}
       </div>` : "";
 
     // ── summary callout ──────────────────────────────────────
@@ -3071,6 +3072,24 @@ async function openLessonDetailModal(lessonId) {
     `;
 
     modal.querySelector(".la-hero-close")?.addEventListener("click", close);
+
+    // Re-run AI evaluation on the stored transcript, then re-open with fresh data
+    const reevalBtn = modal.querySelector("#reeval-btn");
+    if (reevalBtn) {
+      reevalBtn.addEventListener("click", async () => {
+        reevalBtn.disabled = true;
+        reevalBtn.textContent = "Tahlil qilinmoqda…";
+        try {
+          await api(`/api/admin/lessons/${lessonId}/reevaluate`, { method: "POST" });
+          toast("Dars qayta tahlil qilindi", "success");
+          openLessonDetailModal(lessonId);
+        } catch (err) {
+          toast(err.message, "error");
+          reevalBtn.disabled = false;
+          reevalBtn.innerHTML = `${I.trending} Qayta tahlil qilish`;
+        }
+      });
+    }
 
     // Toggle transcript
     const toggleBtn = modal.querySelector("#toggle-transcript");
