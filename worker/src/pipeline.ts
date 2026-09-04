@@ -20,9 +20,13 @@ import { transcribeAudioFile, polishTranscript, evaluateLesson } from "./gemini"
 
 function resolveDownloadUrl(rawUrl: string, baseUrl?: string): string | null {
   if (!rawUrl) return null;
-  if (!baseUrl) return rawUrl;
   try {
     const u = new URL(rawUrl);
+    // Payload allaqachon tashqi manzil bergan bo'lsa (masalan Tailscale *.ts.net) —
+    // o'zgartirmaymiz. Faqat localhost / xususiy IP bo'lsa AUDIOTAP_BASE_URL bilan almashtiriladi.
+    const isLocal = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(u.hostname);
+    if (!isLocal) return rawUrl;
+    if (!baseUrl || /localhost|127\.0\.0\.1/.test(baseUrl)) return rawUrl;
     const base = new URL(baseUrl);
     const basePath = base.pathname.replace(/\/$/, "");
     let path = u.pathname;

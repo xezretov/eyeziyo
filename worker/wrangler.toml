@@ -18,8 +18,8 @@ run_worker_first = ["/api/*"]
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 # Audiotap serverning PUBLIC manzili (oxirida slash yo'q).
 # Webhook payload "http://localhost/api/recordings/..." beradi — origin shunga almashtiriladi.
-# TODO: mijozdan tashqi manzilni olib yangilang.
-AUDIOTAP_BASE_URL = "http://localhost/api"
+# Audiotap Tailscale Funnel orqali ochiq (2026-09-04 da real webhook payloadidan olindi).
+AUDIOTAP_BASE_URL = "https://soft-mixer.taila38ca0.ts.net/api"
 # Faqat shu profildagi artifact qayta ishlanadi, qolganlari "skipped".
 # Audiotap odatda "speech" (opus, kichik) va "original" (flac, katta) yuboradi.
 TARGET_PROFILE = "speech"
