@@ -1,0 +1,61 @@
+name = "tatuziyo-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Frontend + API bitta domenda: tuit.eyeziyo.uz
+routes = [
+  { pattern = "tuit.eyeziyo.uz", custom_domain = true }
+]
+
+# Admin panel statik fayllari (../web) shu Worker'dan beriladi.
+# /api/* har doim Worker'ga tushadi; noma'lum yo'llar index.html (SPA).
+[assets]
+directory = "../web"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash-lite"
+# Audiotap serverning PUBLIC manzili (oxirida slash yo'q).
+# Webhook payload "http://localhost/api/recordings/..." beradi — origin shunga almashtiriladi.
+# TODO: mijozdan tashqi manzilni olib yangilang.
+AUDIOTAP_BASE_URL = "http://localhost/api"
+# Faqat shu profildagi artifact qayta ishlanadi, qolganlari "skipped".
+# Audiotap odatda "speech" (opus, kichik) va "original" (flac, katta) yuboradi.
+TARGET_PROFILE = "speech"
+# Shu hajmdan katta fayl Worker xotirasiga sig'maydi (limit 128MB).
+MAX_INGEST_MB = "90"
+
+# Secrets — `wrangler secret put <NAME>`, HECH QACHON bu faylga yozilmaydi:
+#   GEMINI_API_KEY
+#   JWT_SECRET                 (openssl rand -hex 32)
+#   AUDIOTAP_WEBHOOK_SECRET    (audiotap webhook target'idagi secret bilan bir xil)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tatuziyo-db"
+database_id = "dff04efd-ec99-47ff-91cb-c7f0fa4e5ac1"
+
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "tatuziyo-audio"
+
+[[queues.producers]]
+binding = "JOBS"
+queue = "tatuziyo-jobs"
+
+# Bitta xabar = bitta yozuv (audio katta, batch qilinmaydi)
+[[queues.consumers]]
+queue = "tatuziyo-jobs"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 3
+dead_letter_queue = "tatuziyo-jobs-dlq"
+
+# Osilib qolgan ishlarni tiklash (har 10 daqiqada)
+[triggers]
+crons = ["*/10 * * * *"]
+
+# Worker loglari dashboard'da ko'rinsin (queue/cron xatolarini tekshirish uchun).
+[observability]
+enabled = true

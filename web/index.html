@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>EduLensAI Admin</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+  <link rel="apple-touch-icon" href="/favicon-192.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- LOGIN -->
+  <template id="view-login">
+    <div class="login-page">
+      <div class="login-left">
+        <div class="login-left-inner">
+          <div class="big-logo">
+            <img src="/logo_eyeziyo.png" alt="EduLensAI">
+            <span class="big-logo-text">EduLensAI</span>
+          </div>
+          <h1 class="login-headline">Darslarni tinglang.<br><span class="ai-word">AI</span> bilan baholang.</h1>
+          <p class="login-tagline">Auditoriyalardagi mikrofonlardan kelgan dars yozuvlari avtomatik transkripsiya qilinadi va 5 pedagogik mezon bo'yicha baholanadi.</p>
+          <ul class="login-features">
+            <li>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Auditoriyadan avtomatik audio yozuv
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              O'zbekcha nutqni matnga o'girish
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              <span class="ai-word">AI</span> tahlil — 5 pedagogik mezon
+            </li>
+            <li>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              O'qituvchilar reytingi va statistika
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="login-right">
+        <div class="login-form-card">
+          <h2>Tizimga kiring</h2>
+          <p class="muted">Administrator akkauntingiz bilan davom eting</p>
+
+          <form id="login-form">
+            <label class="field">
+              <span class="label">Email manzil</span>
+              <input type="email" name="email" required placeholder="siz@muassasa.uz" autocomplete="username">
+            </label>
+            <label class="field">
+              <span class="label-row">
+                <span class="label">Parol</span>
+                <button type="button" class="link-btn" id="forgot-btn">Parolni unutdingizmi?</button>
+              </span>
+              <div class="password-row">
+                <input type="password" name="password" id="pw" required placeholder="••••••••" autocomplete="current-password">
+                <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Parolni ko'rsatish">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </label>
+            <label class="remember-row">
+              <input type="checkbox" name="remember" id="remember" checked>
+              <span>Meni eslab qol</span>
+            </label>
+            <div class="error" id="login-error"></div>
+            <button type="submit" class="btn-primary" id="login-btn" style="width:100%;height:42px">Tizimga kirish</button>
+          </form>
+
+          <div class="legal">© 2026 EduLensAI · AI Education · <button type="button" class="link-btn" id="bootstrap-btn">Birinchi sozlash</button></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- SHELL -->
+  <template id="view-shell">
+    <div class="shell" id="shell">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img src="/logo_eyeziyo.png" alt="">
+          <div class="brand-text">
+            <span class="b1">EduLensAI</span>
+            <span class="b2">Admin panel</span>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebar-nav"></nav>
+        <div class="sidebar-footer">
+          <div class="side-org" id="side-org">
+            <div class="org-badge" id="org-badge">T</div>
+            <div class="org-info">
+              <div class="org-name" id="org-name">TUIT</div>
+              <div class="org-type" id="org-type">Universitet</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <div class="shell-main">
+        <header class="topbar">
+          <button class="topbar-toggle" id="sidebar-toggle" title="Sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="breadcrumbs" id="breadcrumbs"></div>
+          <div class="topbar-spacer"></div>
+          <div class="topbar-search">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="global-search" placeholder="Qidirish... (mavzu, o'qituvchi, manba)">
+          </div>
+          <div class="topbar-actions">
+            <button class="btn-icon" id="theme-toggle" title="Mavzuni almashtirish">
+              <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <button class="btn-icon" id="logout-btn" title="Chiqish">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            </button>
+            <div class="user-chip" id="user-chip">
+              <div class="uc-avatar" id="uc-avatar">A</div>
+              <div class="uc-info">
+                <div class="uc-name" id="uc-name">Administrator</div>
+                <div class="uc-email" id="uc-email"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main class="page">
+          <div id="main-content"></div>
+        </main>
+      </div>
+    </div>
+  </template>
+
+  <script src="/app.js?v=20260904"></script>
+</body>
+</html>
