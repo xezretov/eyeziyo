@@ -5,6 +5,16 @@
  * Biz `recording.available` ga obuna bo'lamiz: payload ichida artifact ro'yxati
  * va doimiy `download_url` bo'ladi.
  *
+ * Imzo (standard-webhooks): sarlavhalar
+ *   Webhook-Id:        <hodisa id>
+ *   Webhook-Timestamp: <unix soniya (yoki millisekund)>
+ *   Webhook-Signature: v1,<base64(HMAC-SHA256(secret, "{id}.{timestamp}.{body}"))>
+ *
+ * Audiotap secret'ni qanday ko'rinishda ishlatishi (matn / hex / base64) turlicha
+ * bo'lishi mumkin — shuning uchun kalit bir nechta variantda, imzo ham base64 va
+ * hex ko'rinishida tekshiriladi. 401 javobda sabab aniq aytiladi (secret oshkor
+ * bo'lmaydi), audiotap tomonini sozlash oson bo'lsin.
+ *
  * Eski (eyeziyo) loyihadan farqi:
  *  - Yuklab olish ctx.waitUntil emas, QUEUE orqali (retry + DLQ tekin keladi).
  *  - Secret majburiy: o'rnatilmagan bo'lsa endpoint 503 qaytaradi.
@@ -12,33 +22,94 @@
  */
 import { Env, json, err, logEvent } from "./types";
 
-/** standard-webhooks: "v1,<base64 HMAC-SHA256>" over "{id}.{ts}.{body}" */
+const TOLERANCE_SEC = 5 * 60;
+
+function hexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+function bytesToHex(b: Uint8Array): string {
+  return Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+function bytesToBase64(b: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s);
+}
+function tryBase64(s: string): Uint8Array | null {
+  try {
+    const norm = s.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = norm + "=".repeat((4 - (norm.length % 4)) % 4);
+    const bin = atob(pad);
+    return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  } catch { return null; }
+}
+
+/** Secret'ning mumkin bo'lgan bayt ko'rinishlari: matn, hex, base64 (whsec_ bilan/siz). */
+function secretKeyVariants(secret: string): { name: string; bytes: Uint8Array }[] {
+  const out: { name: string; bytes: Uint8Array }[] = [];
+  const raw = secret.trim();
+  const enc = new TextEncoder();
+  out.push({ name: "utf8", bytes: enc.encode(raw) });
+  const bare = raw.startsWith("whsec_") ? raw.slice(6) : raw;
+  if (bare !== raw) out.push({ name: "utf8-nowhsec", bytes: enc.encode(bare) });
+  if (/^[0-9a-f]+$/i.test(bare) && bare.length % 2 === 0) {
+    out.push({ name: "hex", bytes: hexToBytes(bare) });
+  }
+  const b64 = tryBase64(bare);
+  if (b64 && b64.length >= 16) out.push({ name: "base64", bytes: b64 });
+  return out;
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+interface VerifyResult { ok: boolean; reason?: string; keyVariant?: string }
+
 async function verifySignature(
   secret: string, webhookId: string, timestamp: string,
   rawBody: string, signatureHeader: string,
-): Promise<boolean> {
-  if (!webhookId || !timestamp || !signatureHeader) return false;
+): Promise<VerifyResult> {
+  const missing = [
+    !webhookId && "Webhook-Id", !timestamp && "Webhook-Timestamp", !signatureHeader && "Webhook-Signature",
+  ].filter(Boolean);
+  if (missing.length) return { ok: false, reason: `Sarlavha yo'q: ${missing.join(", ")}` };
 
-  // 5 daqiqadan eski yetkazib berish rad etiladi (replay himoyasi).
-  const ts = parseInt(timestamp, 10);
-  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) return false;
+  // Soniya yoki millisekund — ikkalasi ham qabul qilinadi (replay himoyasi 5 daqiqa).
+  let ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return { ok: false, reason: "Webhook-Timestamp raqam emas" };
+  if (ts > 1e12) ts = Math.floor(ts / 1000);
+  const skew = Math.round(Date.now() / 1000 - ts);
+  if (Math.abs(skew) > TOLERANCE_SEC) {
+    return { ok: false, reason: `Webhook-Timestamp ${Math.abs(skew)}s ${skew > 0 ? "eski" : "kelajakda"} (ruxsat ${TOLERANCE_SEC}s) — server soatini tekshiring` };
+  }
+
+  // Imzo nomzodlari: "v1,<sig>" / "v1=<sig>" / "<sig>"; bo'sh joy bilan ajratilgan bir nechtasi bo'lishi mumkin.
+  const candidates = signatureHeader.split(/\s+/).filter(Boolean)
+    .map((c) => c.replace(/^v1[,=]/, ""));
+  if (!candidates.length) return { ok: false, reason: "Webhook-Signature bo'sh" };
 
   const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
-  );
-  const signed = await crypto.subtle.sign("HMAC", key, enc.encode(`${webhookId}.${timestamp}.${rawBody}`));
-  const expected = btoa(String.fromCharCode(...new Uint8Array(signed)));
+  const signed = enc.encode(`${webhookId}.${timestamp}.${rawBody}`);
 
-  // Secret rotatsiyasida bir nechta nomzod bo'lishi mumkin.
-  for (const cand of signatureHeader.split(/\s+/).filter(Boolean)) {
-    const sig = cand.startsWith("v1,") ? cand.slice(3) : cand;
-    if (sig.length !== expected.length) continue;
-    let diff = 0;
-    for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
-    if (diff === 0) return true;
+  for (const variant of secretKeyVariants(secret)) {
+    const key = await crypto.subtle.importKey("raw", variant.bytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, signed));
+    const expected = [bytesToBase64(mac), bytesToHex(mac)];
+    for (const cand of candidates) {
+      for (const exp of expected) {
+        if (timingSafeEqual(cand, exp) || timingSafeEqual(cand.toLowerCase(), exp)) {
+          return { ok: true, keyVariant: variant.name };
+        }
+      }
+    }
   }
-  return false;
+  return { ok: false, reason: "Imzo mos kelmadi — secret ikkala tomonda bir xilmi va imzo `{id}.{timestamp}.{body}` ustidan HMAC-SHA256 ekanini tekshiring" };
 }
 
 export async function handleWebhook(request: Request, env: Env): Promise<Response> {
@@ -48,14 +119,23 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
     console.error("AUDIOTAP_WEBHOOK_SECRET o'rnatilmagan — webhook rad etildi");
     return err("Webhook sozlanmagan", 503);
   }
-  const ok = await verifySignature(
+  const v = await verifySignature(
     env.AUDIOTAP_WEBHOOK_SECRET,
     request.headers.get("Webhook-Id") || "",
     request.headers.get("Webhook-Timestamp") || "",
     rawBody,
     request.headers.get("Webhook-Signature") || "",
   );
-  if (!ok) return err("Imzo noto'g'ri", 401);
+  if (!v.ok) {
+    // Diagnostika logga: secret yoki imzo qiymati chiqmaydi, faqat sabab va sarlavha borligi.
+    console.warn("Webhook 401:", v.reason, {
+      hasId: Boolean(request.headers.get("Webhook-Id")),
+      hasTs: Boolean(request.headers.get("Webhook-Timestamp")),
+      sigPrefix: (request.headers.get("Webhook-Signature") || "").slice(0, 3),
+      bodyLen: rawBody.length,
+    });
+    return err(`Imzo noto'g'ri: ${v.reason}`, 401);
+  }
 
   let evt: any;
   try { evt = JSON.parse(rawBody); } catch { return err("JSON noto'g'ri", 400); }
@@ -113,8 +193,14 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
 
     if (!res.meta.changed_db) continue;   // dublikat — allaqachon bor
     const rowId = Number(res.meta.last_row_id);
-    await logEvent(env.DB, rowId, "webhook", "ok", `profile=${profile} status=${status}`);
+    await logEvent(env.DB, rowId, "webhook", "ok", `profile=${profile} status=${status} (imzo: ${v.keyVariant})`);
     if (wanted) enqueue.push(rowId);
+  }
+
+  // Hech bir artifact kerakli profilda bo'lmasa — bu sozlama xatosi, logda ko'rinsin.
+  if (!artifacts.some((a) => String(a.profile || "").toLowerCase() === target)) {
+    console.warn(`Webhook: hech bir artifact TARGET_PROFILE="${target}" ga mos emas. Kelgan profillar:`,
+      artifacts.map((a) => a.profile).join(", "));
   }
 
   // Manbani avtomatik ro'yxatga qo'shamiz (admin keyin nomlaydi).
@@ -134,5 +220,8 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
     await env.JOBS.send({ type: "ingest", recordingId: id });
   }
 
-  return json({ ok: true, accepted: enqueue.length, total: artifacts.length });
+  return json({
+    ok: true, accepted: enqueue.length, total: artifacts.length,
+    profiles: artifacts.map((a) => a.profile), target_profile: target,
+  });
 }
