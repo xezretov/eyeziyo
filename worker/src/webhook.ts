@@ -15,14 +15,15 @@
  * hex ko'rinishida tekshiriladi. 401 javobda sabab aniq aytiladi (secret oshkor
  * bo'lmaydi), audiotap tomonini sozlash oson bo'lsin.
  *
- * Eski (eyeziyo) loyihadan farqi:
- *  - Yuklab olish ctx.waitUntil emas, QUEUE orqali (retry + DLQ tekin keladi).
- *  - Secret majburiy: o'rnatilmagan bo'lsa endpoint 503 qaytaradi.
- *  - Faqat TARGET_PROFILE dagi artifact ishlanadi, qolgani "skipped".
+ * D1 ishlamay qolsa (masalan bepul tarif kunlik limiti) payload R2 ga
+ * `pending-webhooks/<event_id>.json` sifatida saqlanadi va 503 qaytariladi
+ * (audiotap ham qayta yuborsin — dedup bor). Cron har 10 daqiqada va admin
+ * Sozlamalar sahifasidagi tugma zaxiradagilarni qayta ishlaydi.
  */
 import { Env, json, err, logEvent } from "./types";
 
 const TOLERANCE_SEC = 5 * 60;
+const PENDING_PREFIX = "pending-webhooks/";
 
 function hexToBytes(hex: string): Uint8Array {
   const out = new Uint8Array(hex.length / 2);
@@ -149,7 +150,35 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
   if (eventType !== "recording.available") {
     return json({ ok: true, ignored: eventType });
   }
+  console.log("Webhook qabul qilindi:", eventId, "imzo:", v.keyVariant, "hajm:", rawBody.length);
 
+  try {
+    const result = await ingestEvent(env, evt, rawBody, `imzo: ${v.keyVariant}`);
+    return json({ ok: true, ...result });
+  } catch (e: any) {
+    // D1 ishlamayapti (masalan kunlik limit) — payload'ni R2 ga saqlab qo'yamiz,
+    // cron / admin keyin qayta ishlaydi. 503 qaytaramiz: audiotap ham retry qilsin (dedup bor).
+    const msg = e?.message || String(e);
+    try {
+      await env.AUDIO.put(`${PENDING_PREFIX}${eventId}.json`, rawBody, {
+        httpMetadata: { contentType: "application/json" },
+        customMetadata: { error: msg.slice(0, 200), receivedAt: new Date().toISOString() },
+      });
+      console.error("Webhook: D1 xatosi, payload R2 zaxiraga saqlandi:", eventId, msg);
+      return err(`Baza vaqtincha ishlamayapti — hodisa saqlab qo'yildi, keyin avtomatik qayta ishlanadi (${msg.slice(0, 120)})`, 503);
+    } catch (e2: any) {
+      console.error("Webhook: D1 ham, R2 ham ishlamadi:", msg, e2?.message);
+      return err(`Serverda xatolik: ${msg.slice(0, 120)}`, 503);
+    }
+  }
+}
+
+/** Hodisani D1 ga yozib navbatga qo'yadi. Webhook'dan ham, R2 zaxirasidan qayta ishlashda ham ishlatiladi. */
+export async function ingestEvent(
+  env: Env, evt: any, rawBody: string, note: string,
+): Promise<{ accepted: number; total: number; profiles: string[]; target_profile: string }> {
+  const eventType = String(evt?.type || "recording.available");
+  const eventId = String(evt?.id || "");
   const data = evt.data || {};
   const rec = data.recording || {};
   const recordingId = String(rec.id || evt.subject || "");
@@ -159,7 +188,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
   const gapSeconds = Number(data.completeness?.gap_seconds_total || 0);
   const artifacts: any[] = Array.isArray(data.artifacts) ? data.artifacts : [];
 
-  if (!recordingId || artifacts.length === 0) return err("recording/artifacts yo'q", 400);
+  if (!recordingId || artifacts.length === 0) throw new Error("recording/artifacts yo'q");
 
   const target = (env.TARGET_PROFILE || "speech").toLowerCase();
   const enqueue: number[] = [];
@@ -193,7 +222,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
 
     if (!res.meta.changed_db) continue;   // dublikat — allaqachon bor
     const rowId = Number(res.meta.last_row_id);
-    await logEvent(env.DB, rowId, "webhook", "ok", `profile=${profile} status=${status} (imzo: ${v.keyVariant})`);
+    await logEvent(env.DB, rowId, "webhook", "ok", `profile=${profile} status=${status} (${note})`);
     if (wanted) enqueue.push(rowId);
   }
 
@@ -215,13 +244,42 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
     ).bind(sourceName, eventId).run();
   }
 
-  // Navbatga qo'yamiz va DARHOL 200 qaytaramiz — audiotap kutmasin.
+  // Navbatga qo'yamiz va DARHOL qaytamiz — audiotap kutmasin.
   for (const id of enqueue) {
     await env.JOBS.send({ type: "ingest", recordingId: id });
   }
 
-  return json({
-    ok: true, accepted: enqueue.length, total: artifacts.length,
-    profiles: artifacts.map((a) => a.profile), target_profile: target,
-  });
+  return {
+    accepted: enqueue.length, total: artifacts.length,
+    profiles: artifacts.map((a) => String(a.profile || "")), target_profile: target,
+  };
+}
+
+/** R2 zaxirasidagi (D1 ishlamaganda saqlangan) hodisalarni qayta ishlaydi. */
+export async function replayPendingWebhooks(env: Env): Promise<{ pending: number; replayed: number; failed: number; error?: string }> {
+  const list = await env.AUDIO.list({ prefix: PENDING_PREFIX, limit: 100 });
+  let replayed = 0, failed = 0, error: string | undefined;
+  for (const obj of list.objects) {
+    try {
+      const o = await env.AUDIO.get(obj.key);
+      if (!o) continue;
+      const raw = await o.text();
+      const evt = JSON.parse(raw);
+      await ingestEvent(env, evt, raw, "R2 zaxiradan qayta ishlandi");
+      await env.AUDIO.delete(obj.key);
+      replayed++;
+    } catch (e: any) {
+      failed++;
+      error = e?.message || String(e);
+      console.error("Replay xatosi:", obj.key, error);
+      // D1 hali ishlamayotgan bo'lsa qolganlarini urinib o'tirmaymiz.
+      if (/D1_ERROR|row read limit/i.test(error || "")) break;
+    }
+  }
+  return { pending: list.objects.length - replayed, replayed, failed, error };
+}
+
+export async function countPendingWebhooks(env: Env): Promise<number> {
+  const list = await env.AUDIO.list({ prefix: PENDING_PREFIX, limit: 1000 });
+  return list.objects.length;
 }

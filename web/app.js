@@ -2264,6 +2264,9 @@ async function renderSettings() {
           ${row("Qayta ishlanadigan profil", `<span class="tag">${escapeHtml(sys.vars?.target_profile || "speech")}</span>`)}
           ${row("Audiotap manzili (AUDIOTAP_BASE_URL)", `<span class="tag" style="${sys.audiotap_base_is_local ? "color:var(--danger)" : ""}">${escapeHtml(sys.vars?.audiotap_base_url || "—")}</span>`)}
           ${row("Oxirgi webhook", `<b>${fmtDateTime(sys.last_webhook_at)}</b>`)}
+          ${row("Bazaga yozilmay qolganlar (R2 zaxira)", sys.pending_webhooks > 0
+            ? `<span class="tag" style="color:var(--warning)">${sys.pending_webhooks} ta</span> <button class="btn-secondary btn-sm" id="replay-btn">${I.refresh} Qayta ishlash</button>`
+            : sys.pending_webhooks === -1 ? `<span class="tag muted">noma'lum</span>` : `<span class="tag" style="color:var(--success)">yo'q</span>`)}
           ${sys.audiotap_base_is_local ? `<div class="cov-note" style="margin-top:12px">${I.warn} AUDIOTAP_BASE_URL hali lokal manzil — Cloudflare Worker unga ulana olmaydi. Audiotap serverning tashqi (public) manzilini <code>wrangler.toml</code> ga yozib deploy qiling.</div>` : ""}
           ${!sys.last_webhook_at ? `<div class="cov-note" style="margin-top:12px">${I.info} Hali birorta webhook kelmagan. Audiotap'da webhook target yaratib, yuqoridagi URL va secret'ni kiriting.</div>` : ""}
         </div>
@@ -2347,6 +2350,14 @@ async function renderSettings() {
   document.getElementById("copy-webhook").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(sys.webhook_url); toast("Webhook URL nusxalandi", "success"); }
     catch { toast("Nusxalab bo'lmadi — qo'lda belgilab oling", "error"); }
+  });
+  document.getElementById("replay-btn")?.addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    try {
+      const r = await api("/api/system/replay-webhooks", { method: "POST" });
+      toast(`Qayta ishlandi: ${r.replayed} ta${r.failed ? `, xato: ${r.failed} (${r.error || ""})` : ""}`, r.failed ? "error" : "success", 6000);
+      renderSettings();
+    } catch (ex) { toast(ex.message, "error"); e.target.disabled = false; }
   });
   const pwForm = document.getElementById("pw-form");
   pwForm.addEventListener("submit", async (e) => {

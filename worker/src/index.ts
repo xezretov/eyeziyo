@@ -8,6 +8,7 @@
  *   GET  /api/me
  *   POST /api/me/password              — o'z parolini o'zgartirish
  *   GET  /api/system                   — sozlamalar sahifasi uchun tizim holati
+ *   POST /api/system/replay-webhooks   — R2 zaxirasidagi webhook'larni qayta ishlash
  *   GET  /api/dashboard/stats|live
  *   GET  /api/recordings               — filtrli ro'yxat (server pagination)
  *   GET  /api/recordings/:id
@@ -23,7 +24,7 @@
 import { Env, Job, json, err, CORS } from "./types";
 import { signJWT, verifyJWT, verifyPassword, hashPassword, REFRESH_EXPIRY_SECONDS } from "./auth";
 import { checkRateLimit, clientKey } from "./rateLimit";
-import { handleWebhook } from "./webhook";
+import { handleWebhook, replayPendingWebhooks, countPendingWebhooks } from "./webhook";
 import { runJob } from "./pipeline";
 import * as rec from "./recordings";
 import * as dash from "./dashboard";
@@ -73,6 +74,8 @@ async function systemInfo(request: Request, env: Env): Promise<Response> {
       webhook: Boolean(env.AUDIOTAP_WEBHOOK_SECRET),
     },
     last_webhook_at: last?.created_at || null,
+    // D1 ishlamaganda R2 ga saqlangan, hali bazaga tushmagan hodisalar soni.
+    pending_webhooks: await countPendingWebhooks(env).catch(() => -1),
     counts: Object.fromEntries((counts.results as any[]).map((r) => [r.status, r.n])),
     users: users.results,
   });
@@ -104,7 +107,7 @@ export default {
     try {
       // ── Webhook (JWT emas, HMAC bilan himoyalangan) ──
       if (path === "/api/webhooks/audiotap" && method === "POST") {
-        return handleWebhook(request, env);
+        return await handleWebhook(request, env);
       }
 
       if (path === "/api/health") {
@@ -194,59 +197,62 @@ export default {
       const isAdmin = user.role === "admin";
 
       if (path === "/api/me" && method === "GET") return json({ user });
-      if (path === "/api/me/password" && method === "POST") return changePassword(request, env, user.id);
-      if (path === "/api/system" && method === "GET") return systemInfo(request, env);
+      if (path === "/api/me/password" && method === "POST") return await changePassword(request, env, user.id);
+      if (path === "/api/system" && method === "GET") return await systemInfo(request, env);
+      if (path === "/api/system/replay-webhooks" && method === "POST") {
+        return json(await replayPendingWebhooks(env));
+      }
 
       // ── Dashboard ──
-      if (path === "/api/dashboard/stats" && method === "GET") return dash.stats(request, env);
-      if (path === "/api/dashboard/live"  && method === "GET") return dash.live(env);
+      if (path === "/api/dashboard/stats" && method === "GET") return await dash.stats(request, env);
+      if (path === "/api/dashboard/live"  && method === "GET") return await dash.live(env);
 
       // ── Recordings ──
-      if (path === "/api/recordings" && method === "GET") return rec.listRecordings(request, env);
+      if (path === "/api/recordings" && method === "GET") return await rec.listRecordings(request, env);
 
       const m = path.match(/^\/api\/recordings\/(\d+)(\/[a-z]+)?$/);
       if (m) {
         const id = parseInt(m[1], 10);
         const sub = m[2] || "";
-        if (sub === ""           && method === "GET")  return rec.getRecording(env, id);
-        if (sub === "/audio"     && method === "GET")  return rec.streamAudio(request, env, id);
-        if (sub === "/assign"    && method === "POST") return rec.assignRecording(request, env, id, user.id);
-        if (sub === "/reprocess" && method === "POST") return rec.reprocess(request, env, id);
+        if (sub === ""           && method === "GET")  return await rec.getRecording(env, id);
+        if (sub === "/audio"     && method === "GET")  return await rec.streamAudio(request, env, id);
+        if (sub === "/assign"    && method === "POST") return await rec.assignRecording(request, env, id, user.id);
+        if (sub === "/reprocess" && method === "POST") return await rec.reprocess(request, env, id);
         if (sub === ""           && method === "DELETE") {
           if (!isAdmin) return err("Ruxsat yo'q", 403);
-          return rec.deleteRecording(env, id);
+          return await rec.deleteRecording(env, id);
         }
       }
 
       // ── Ma'lumotnoma ──
-      if (path === "/api/teachers" && method === "GET")  return dir.listTeachers(env);
-      if (path === "/api/teachers" && method === "POST") return dir.createTeacher(request, env);
+      if (path === "/api/teachers" && method === "GET")  return await dir.listTeachers(env);
+      if (path === "/api/teachers" && method === "POST") return await dir.createTeacher(request, env);
       const mt = path.match(/^\/api\/teachers\/(\d+)$/);
       if (mt) {
         const tid = parseInt(mt[1], 10);
-        if (method === "GET")    return dir.getTeacher(env, tid);
-        if (method === "PATCH")  return dir.updateTeacher(request, env, tid);
+        if (method === "GET")    return await dir.getTeacher(env, tid);
+        if (method === "PATCH")  return await dir.updateTeacher(request, env, tid);
         if (method === "DELETE") {
           if (!isAdmin) return err("Ruxsat yo'q", 403);
-          return dir.deleteTeacher(env, tid);
+          return await dir.deleteTeacher(env, tid);
         }
       }
 
-      if (path === "/api/subjects" && method === "GET")  return dir.listSubjects(env);
-      if (path === "/api/subjects" && method === "POST") return dir.createSubject(request, env);
+      if (path === "/api/subjects" && method === "GET")  return await dir.listSubjects(env);
+      if (path === "/api/subjects" && method === "POST") return await dir.createSubject(request, env);
       const msub = path.match(/^\/api\/subjects\/(\d+)$/);
       if (msub) {
         const sid = parseInt(msub[1], 10);
-        if (method === "PATCH")  return dir.updateSubject(request, env, sid);
+        if (method === "PATCH")  return await dir.updateSubject(request, env, sid);
         if (method === "DELETE") {
           if (!isAdmin) return err("Ruxsat yo'q", 403);
-          return dir.deleteSubject(env, sid);
+          return await dir.deleteSubject(env, sid);
         }
       }
 
-      if (path === "/api/sources" && method === "GET")   return dir.listSources(env);
+      if (path === "/api/sources" && method === "GET")   return await dir.listSources(env);
       const ms = path.match(/^\/api\/sources\/(\d+)$/);
-      if (ms && method === "PATCH") return dir.updateSource(request, env, parseInt(ms[1], 10));
+      if (ms && method === "PATCH") return await dir.updateSource(request, env, parseInt(ms[1], 10));
 
       return err("Topilmadi", 404);
     } catch (e: any) {
@@ -278,6 +284,14 @@ export default {
   /** Cron — osilib qolgan ishlarni tiklaydi (har 10 daqiqada). */
   async scheduled(_evt: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil((async () => {
+      // D1 ishlamagan paytda R2 ga saqlangan webhook'larni qayta ishlaymiz.
+      try {
+        const r = await replayPendingWebhooks(env);
+        if (r.replayed || r.failed) console.log("Cron replay:", JSON.stringify(r));
+      } catch (e: any) {
+        console.error("Cron replay xatosi:", e?.message || e);
+      }
+
       // 30 daqiqadan beri oraliq holatda qolgan va urinishlari tugamaganlar.
       const stuck = await env.DB.prepare(
         `SELECT id, status FROM recordings
