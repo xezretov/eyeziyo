@@ -250,6 +250,12 @@ export default {
 
       return err("Topilmadi", 404);
     } catch (e: any) {
+      const msg = String(e?.message || e);
+      // D1 bepul tarif kunlik limiti (hisob bo'yicha umumiy) — foydalanuvchiga aniq aytamiz.
+      if (/row read limit|daily.*limit|code: 7500/i.test(msg)) {
+        console.error("D1 kunlik limit:", msg);
+        return err("Ma'lumotlar bazasi kunlik limiti tugadi (Cloudflare D1 bepul tarif). Yarim tunda (00:00 UTC, 05:00 Toshkent) tiklanadi yoki Workers Paid tarifga o'ting.", 503);
+      }
       console.error("Worker xatosi:", e?.stack || e);
       return err("Serverda xatolik", 500);
     }
