@@ -8,7 +8,7 @@
  */
 import { Env, json, err, mimeFor } from "./types";
 
-const IN_PROGRESS = `'queued','downloading','stored','transcribing','analyzing'`;
+const IN_PROGRESS = `'queued','downloading','stored','transcribing','stt_batch','analyzing'`;
 
 const JOINS = `
        FROM recordings r
@@ -53,7 +53,7 @@ export async function listRecordings(request: Request, env: Env): Promise<Respon
             sub.id AS subject_id, sub.name AS subject_name,
             e.overall_score, e.topic_score, e.speech_score, e.method_score,
             e.interaction_score, e.feedback_score,
-            tr.word_count
+            tr.word_count, json_extract(NULLIF(tr.stats,''), '$.media_pct') AS media_pct
        ${JOINS}
        LEFT JOIN transcripts tr ON tr.recording_id = r.id
       WHERE ${w}
@@ -86,7 +86,7 @@ export async function getRecording(env: Env, id: number): Promise<Response> {
   delete r.payload;   // xom JSON audit uchun bazada qoladi
 
   const tr = await env.DB.prepare(
-    `SELECT text, char_count, word_count, model FROM transcripts WHERE recording_id = ?`
+    `SELECT text, char_count, word_count, model, stats FROM transcripts WHERE recording_id = ?`
   ).bind(id).first<any>();
 
   let an: any = null;
@@ -98,6 +98,7 @@ export async function getRecording(env: Env, id: number): Promise<Response> {
         an.improvements = JSON.parse(an.improvements || "[]");
         an.advice       = JSON.parse(an.advice || "[]");
       } catch { an.strengths = []; an.improvements = []; an.advice = []; }
+      try { an.timeline = an.timeline ? JSON.parse(an.timeline) : null; } catch { an.timeline = null; }
     }
   }
 
@@ -106,6 +107,7 @@ export async function getRecording(env: Env, id: number): Promise<Response> {
        FROM processing_events WHERE recording_id = ? ORDER BY id DESC LIMIT 50`
   ).bind(id).all();
 
+  if (tr) { try { tr.stats = tr.stats ? JSON.parse(tr.stats) : null; } catch { tr.stats = null; } }
   return json({ recording: r, transcript: tr || null, analysis: an, events: ev.results });
 }
 
@@ -199,7 +201,14 @@ export async function assignRecording(
     await env.JOBS.send({ type: "analyze", recordingId: id });
     return json({ ok: true, queued: "analyze" });
   }
-  return json({ ok: true, queued: null, note: "Transkript tayyor bo'lgach baholanadi" });
+  // Konveyer hali ishlayotgan bo'lsa (yuklab olish/STT) — aralashmaymiz, o'zi davom etadi.
+  if (["queued", "downloading", "stored", "transcribing", "stt_batch", "analyzing"].includes(rec.status)) {
+    return json({ ok: true, queued: null, note: "Qayta ishlash davom etmoqda — transkript tayyor bo'lgach baholanadi" });
+  }
+  // Transkript yo'q: STT_MODE=manual da pullik STT faqat shu yerda — biriktirilgandan keyin boshlanadi.
+  await env.DB.prepare(`UPDATE recordings SET status = 'queued', error = '', attempts = 0 WHERE id = ?`).bind(id).run();
+  await env.JOBS.send({ type: "ingest", recordingId: id });
+  return json({ ok: true, queued: "ingest", note: "Transkripsiya boshlandi — tugagach AI avtomatik baholaydi" });
 }
 
 /**
@@ -215,11 +224,12 @@ export async function reprocess(request: Request, env: Env, id: number): Promise
     await env.DB.prepare(`UPDATE recordings SET status='analyzing', error='' WHERE id = ?`).bind(id).run();
     await env.JOBS.send({ type: "analyze", recordingId: id });
   } else if (from === "transcribe" && r.r2_key) {
+    // force: bo'lak keshi tozalanadi, STT_MODE/kunlik limit e'tiborsiz — admin ataylab bosdi.
     await env.DB.prepare(`UPDATE recordings SET status='queued', error='', attempts=0 WHERE id = ?`).bind(id).run();
-    await env.JOBS.send({ type: "ingest", recordingId: id });
+    await env.JOBS.send({ type: "ingest", recordingId: id, force: true });
   } else {
     await env.DB.prepare(`UPDATE recordings SET status='queued', error='', attempts=0, r2_key='' WHERE id = ?`).bind(id).run();
-    await env.JOBS.send({ type: "ingest", recordingId: id });
+    await env.JOBS.send({ type: "ingest", recordingId: id, force: true });
   }
   return json({ ok: true, from });
 }

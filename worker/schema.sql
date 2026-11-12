@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
   improvements TEXT DEFAULT '[]',
   advice TEXT DEFAULT '[]',
   model TEXT DEFAULT '',
+  timeline TEXT DEFAULT '',   -- JSON: dars bosqichlari + ovoz manbalari statistikasi (2026-09-28)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (lesson_id) REFERENCES lessons(id)
 );
@@ -313,6 +314,9 @@ CREATE TABLE IF NOT EXISTS recordings (
   assigned_at       TIMESTAMP,
   -- Baholangach yaratiladigan dars
   lesson_id         INTEGER REFERENCES lessons(id) ON DELETE SET NULL,
+  -- Gemini Batch STT (status = stt_batch): job nomi "batches/..." va yuborilgan vaqt
+  batch_name        TEXT DEFAULT '',
+  batch_submitted_at TIMESTAMP,
   created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -330,8 +334,40 @@ CREATE TABLE IF NOT EXISTS transcripts (
   char_count   INTEGER NOT NULL DEFAULT 0,
   word_count   INTEGER NOT NULL DEFAULT 0,
   model        TEXT DEFAULT '',
+  stats        TEXT DEFAULT '',   -- JSON: O'QITUVCHI/TALABA/VIDEO/jimlik ulushlari, vaqt chizig'i (2026-09-28)
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- STT bo'lak keshi: har ~10 daqiqalik bo'lakning tayyor (polish qilingan) matni.
+-- Queue/cron qayta yuborsa yoki consumer 15 daqiqada uzilsa — pullik STT takrorlanmaydi.
+CREATE TABLE IF NOT EXISTS stt_chunks (
+  recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+  idx          INTEGER NOT NULL,
+  total        INTEGER NOT NULL DEFAULT 1,
+  start_sec    REAL DEFAULT 0,
+  end_sec      REAL DEFAULT 0,
+  text         TEXT NOT NULL DEFAULT '',
+  model        TEXT DEFAULT '',
+  note         TEXT DEFAULT '',
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (recording_id, idx)
+);
+
+-- Gemini token/xarajat hisobi (usageMetadata): har pullik chaqiruv bitta qator. usd — tarif bo'yicha hisob.
+CREATE TABLE IF NOT EXISTS gemini_usage (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  recording_id INTEGER,
+  stage        TEXT NOT NULL,            -- stt (STT + polish) | eval
+  model        TEXT DEFAULT '',
+  batch        INTEGER DEFAULT 0,        -- 1 = Batch API (50%)
+  audio_in     INTEGER DEFAULT 0,
+  text_in      INTEGER DEFAULT 0,
+  out_tokens   INTEGER DEFAULT 0,
+  usd          REAL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_gusage_created ON gemini_usage(created_at);
+CREATE INDEX IF NOT EXISTS idx_gusage_rec ON gemini_usage(recording_id);
 
 -- Ishlov berish jurnali
 CREATE TABLE IF NOT EXISTS processing_events (

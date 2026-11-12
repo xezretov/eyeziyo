@@ -621,23 +621,27 @@ function renderKPIs({ teachers, stats, students, groups, subjects, topLevel, D }
   let scoreDelta = null;
   if (trend.length >= 2) scoreDelta = trend[trend.length - 1] - trend[trend.length - 2];
 
+  // Har karta o'z rangida (styles.css .kpi.tone-*): ko'rsatkich turi → rang, foiz kartalarda
+  // qiymat past bo'lsa (<50%) ogohlantirish rangi. Barcha ranglar loyiha palitrasidan.
+  const scoreTone = (v, base) => (Number(v) > 0 && Number(v) < 50 ? "danger" : base);
+  const avgTest = stats?.average_test_score ?? 0;
   const kpis = [
-    { icon: I.trending, color: "green", label: "Umumiy AI baho", value: `${engagement}%`,
-      spark: trend.length ? trend : sparkSeed(engagement, 4), sparkColor: "var(--success)", delta: scoreDelta, deltaSuffix: "%" },
-    { icon: I.mic, color: "blue", label: "Jami darslar", value: stats?.total_lessons ?? 0,
-      spark: sparkSeed(stats?.total_lessons ?? 0, 11), sparkColor: "var(--brand)" },
-    { icon: I.teachers, color: "cyan", label: "O'qituvchilar", value: teachers.length, route: "teachers",
-      spark: sparkSeed(teachers.length, 23), sparkColor: "var(--cyan)" },
-    { icon: I.students, color: "violet", label: "O'quvchilar", value: stats?.total_students ?? (students?.length || 0), route: "students",
-      spark: sparkSeed(stats?.total_students ?? (students?.length || 0), 37), sparkColor: "var(--accent)" },
-    { icon: I.groups, color: "amber", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups",
-      spark: sparkSeed(groups.length, 53), sparkColor: "var(--warning)" },
-    { icon: I.quiz, color: "slate", label: "O'rtacha test bali", value: `${stats?.average_test_score ?? 0}%`,
-      spark: sparkSeed(stats?.average_test_score ?? 0, 71), sparkColor: "var(--text-muted)" },
+    { icon: I.trending, color: "green", tone: scoreTone(engagement, "success"), label: "Umumiy AI baho", value: `${engagement}%`,
+      spark: trend.length ? trend : sparkSeed(engagement, 4), sparkColor: "var(--kt)", delta: scoreDelta, deltaSuffix: "%" },
+    { icon: I.mic, color: "blue", tone: "brand", label: "Jami darslar", value: stats?.total_lessons ?? 0,
+      spark: sparkSeed(stats?.total_lessons ?? 0, 11), sparkColor: "var(--kt)" },
+    { icon: I.teachers, color: "cyan", tone: "info", label: "O'qituvchilar", value: teachers.length, route: "teachers",
+      spark: sparkSeed(teachers.length, 23), sparkColor: "var(--kt)" },
+    { icon: I.students, color: "violet", tone: "accent", label: "O'quvchilar", value: stats?.total_students ?? (students?.length || 0), route: "students",
+      spark: sparkSeed(stats?.total_students ?? (students?.length || 0), 37), sparkColor: "var(--kt)" },
+    { icon: I.groups, color: "amber", tone: "warning", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups",
+      spark: sparkSeed(groups.length, 53), sparkColor: "var(--kt)" },
+    { icon: I.quiz, color: "slate", tone: scoreTone(avgTest, "indigo"), label: "O'rtacha test bali", value: `${avgTest}%`,
+      spark: sparkSeed(avgTest, 71), sparkColor: "var(--kt)" },
   ];
 
   kpi.innerHTML = kpis.map((k) => `
-    <div class="kpi kpi-spark${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
+    <div class="kpi kpi-spark tone-${k.tone || "brand"}${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
       <div class="kpi-head">
         <div class="kpi-label">${escapeHtml(k.label)}</div>
         <div class="kpi-icon ${k.color}">${k.icon}</div>
@@ -1518,7 +1522,7 @@ async function renderSubjects() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// AUDITORIUMS (HEMIS rooms — read-only reference)
+// AUDITORIUMS (audiotap xonalari — /api/admin/auditoriums)
 // ═══════════════════════════════════════════════════════════════
 async function renderAuditoriums() {
   setBreadcrumbs([{ label: "Dashboard", route: "dashboard" }, { label: "Xonalar" }]);
@@ -1650,13 +1654,14 @@ const REC_STATUS = {
   downloading:          { label: "Yuklanmoqda", color: "var(--warning)" },
   stored:               { label: "Saqlangan", color: "var(--brand, var(--warning))" },
   transcribing:         { label: "Transkripsiya", color: "var(--warning)" },
+  stt_batch:            { label: "Transkripsiya (batch)", color: "var(--warning)" },
   awaiting_assignment:  { label: "Biriktirish kutilmoqda", color: "var(--warning)" },
   analyzing:            { label: "Baholanmoqda", color: "var(--warning)" },
   done:                 { label: "Tayyor", color: "var(--success)" },
   failed:               { label: "Xato", color: "var(--danger)" },
   skipped:              { label: "O'tkazilgan", color: "var(--text-faint)" },
 };
-const REC_IN_PROGRESS = ["queued", "downloading", "stored", "transcribing", "analyzing"];
+const REC_IN_PROGRESS = ["queued", "downloading", "stored", "transcribing", "stt_batch", "analyzing"];
 const REC_CRITERIA = [
   ["topic_score", "Mavzu mosligi", "#2563EB"],
   ["speech_score", "Nutq tozaligi", "#06B6D4"],
@@ -1664,6 +1669,92 @@ const REC_CRITERIA = [
   ["interaction_score", "Interaktivlik", "#059669"],
   ["feedback_score", "Teskari aloqa", "#D97706"],
 ];
+
+// ── Dars jarayoni: ovoz manbalari (O'QITUVCHI / TALABA / VIDEO / jimlik) va bosqichlar ──
+const TL_WHO = {
+  teacher: { label: "O'qituvchi", color: "var(--brand)" },
+  student: { label: "Talabalar", color: "var(--success)" },
+  media:   { label: "Video/media", color: "var(--warning)" },
+  silence: { label: "Jimlik/pauza", color: "var(--border-strong)" },
+};
+const tlClock = (sec) => {
+  const s = Math.max(0, Math.round(sec)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  const p = (n) => String(n).padStart(2, "0");
+  return h ? `${h}:${p(m)}:${p(ss)}` : `${p(m)}:${p(ss)}`;
+};
+function lessonTimelineHtml(stats, tl) {
+  if (!stats) return "";
+  const total = Math.max(1, stats.total_sec);
+  const mins = (s) => Math.round(s / 60);
+  const bar = (stats.timeline || []).map(b => {
+    const w = TL_WHO[b.who] || TL_WHO.silence;
+    return `<div title="${escapeAttr(w.label + " · " + tlClock(b.from) + "–" + tlClock(b.to))}" style="position:absolute;top:0;bottom:0;left:${(b.from / total * 100).toFixed(2)}%;width:${Math.max(0.3, (b.to - b.from) / total * 100).toFixed(2)}%;background:${w.color}"></div>`;
+  }).join("");
+  const ticks = [];
+  for (let t = 0; t <= total; t += 600) ticks.push(`<span style="position:absolute;left:${(t / total * 100).toFixed(2)}%;transform:translateX(-50%)">${Math.round(t / 60)}'</span>`);
+  const rows = [
+    ["teacher", stats.teacher_sec, stats.teacher_pct],
+    ["student", stats.student_sec, stats.student_pct, `${stats.student_turns} marta`],
+    ["media", stats.media_sec, stats.media_pct],
+    ["silence", stats.silence_sec, stats.silence_pct],
+  ];
+  // Bosqichlar: vaqt bo'yicha saralanadi; oldingisi bilan 50%+ ustma-ust tushgan takror bosqich tashlanadi
+  // (model ba'zan 49–70 va 48–70 kabi ikki nusxa qaytaradi). Video bosqichi ustun turadi.
+  const phases = [];
+  for (const ph of ((tl && Array.isArray(tl.phases)) ? tl.phases : []).slice().sort((a, b) => a.from - b.from || (/video/i.test(b.type) - /video/i.test(a.type)))) {
+    const len = Math.max(0.1, ph.to - ph.from);
+    const dup = phases.find(q => Math.max(0, Math.min(q.to, ph.to) - Math.max(q.from, ph.from)) / len >= 0.5);
+    if (!dup) phases.push(ph);
+    else if (/video/i.test(ph.type) && !/video/i.test(dup.type)) phases[phases.indexOf(dup)] = ph;
+  }
+  const mediaWarn = stats.media_pct >= 30;
+  return `
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <div><div class="card-title">Dars jarayoni</div><div class="card-subtitle">Kim, qachon va qancha gapirgan — audio bo'yicha AI aniqlagan (taxminiy)</div></div>
+        ${stats.media_pct >= 5 ? `<span class="tag" style="color:var(--warning)">Video ${stats.media_pct}%</span>` : ""}
+      </div>
+      <div class="card-body">
+        ${mediaWarn ? `<div class="cov-note" style="margin-bottom:14px;border-color:var(--warning)">${I.warn} Darsning <b>${mins(stats.media_sec)} daqiqasi (${stats.media_pct}%)</b> yozib olingan video/audio: ${(stats.media_blocks || []).map(b => `${tlClock(b.from)}–${tlClock(b.to)}`).join(", ")}. Bu qism o'qituvchi nutqi sifatida baholanmadi.</div>` : ""}
+        <div style="position:relative;height:22px;border-radius:6px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--border)">${bar}</div>
+        <div style="position:relative;height:16px;font-size:11px;color:var(--text-faint);margin-top:4px">${ticks.join("")}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px">
+          ${rows.map(([k, sec, pct, extra]) => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px">
+              <span style="width:10px;height:10px;border-radius:3px;background:${TL_WHO[k].color};flex-shrink:0"></span>
+              <div style="min-width:0"><div class="sub" style="font-size:12px">${TL_WHO[k].label}</div>
+                <div><b>${mins(sec)} daq</b> <span class="sub">· ${pct}%${extra ? " · " + extra : ""}</span></div></div>
+            </div>`).join("")}
+        </div>
+        ${tl && tl.media_note ? `<div class="cov-note" style="margin-top:12px">${I.info} <span>${escapeHtml(tl.media_note)}</span></div>` : ""}
+        ${phases.length ? `
+          <div class="table-wrap" style="margin-top:14px"><table class="data-table">
+            <thead><tr><th style="width:110px">Vaqt</th><th style="width:170px">Bosqich</th><th>Nima bo'ldi</th></tr></thead>
+            <tbody>${phases.map(p => `
+              <tr>
+                <td style="white-space:nowrap">${Math.round(p.from)}–${Math.round(p.to)} daq</td>
+                <td><span class="tag"${/video/i.test(p.type) ? ' style="color:var(--warning)"' : ""}>${escapeHtml(p.type || "—")}</span></td>
+                <td class="sub">${escapeHtml(p.note || "")}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table></div>` : ""}
+      </div>
+    </div>`;
+}
+// Yorliqli transkriptni rangli qatorlar bilan ko'rsatish (yorliqsiz eski matn — oddiy).
+function labeledTranscriptHtml(text) {
+  const re = /^\[(\d{1,2}:\d{2}(?::\d{2})?)?\s*(O'QITUVCHI|TALABA|VIDEO)\]\s*/;
+  const lines = String(text || "").split("\n");
+  if (!lines.some(l => re.test(l))) return `<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
+  const map = { "O'QITUVCHI": TL_WHO.teacher, "TALABA": TL_WHO.student, "VIDEO": TL_WHO.media };
+  return lines.filter(l => l.trim()).map(l => {
+    const m = l.match(re);
+    if (!m) return `<div style="margin:4px 0">${escapeHtml(l)}</div>`;
+    const w = map[m[2]];
+    return `<div style="margin:6px 0;padding-left:10px;border-left:3px solid ${w.color}${m[2] === "VIDEO" ? ";color:var(--text-subtle)" : ""}">
+      <span style="font-size:11.5px;font-weight:600;color:${w.color}">${m[1] ? m[1] + " · " : ""}${w.label}</span><br>${escapeHtml(l.slice(m[0].length))}</div>`;
+  }).join("");
+}
 
 function recCriteriaHtml(an) {
   return `<div class="criteria-list">${REC_CRITERIA.map(([key, label, color]) => {
@@ -1768,7 +1859,7 @@ async function renderRecordings() {
                     </div></td>
                     <td>${r.teacher_name ? escapeHtml(r.teacher_name) : '<span class="sub">Biriktirilmagan</span>'}</td>
                     <td>${r.subject_name ? `<span class="tag">${escapeHtml(r.subject_name)}</span> ` : ""}${escapeHtml(r.topic || "—")}${r.group_name ? ` <span class="sub">· ${escapeHtml(r.group_name)}</span>` : ""}</td>
-                    <td class="num">${fmtDuration(r.duration_seconds)}</td>
+                    <td class="num">${fmtDuration(r.duration_seconds)}${r.media_pct >= 10 ? `<div><span class="tag" style="color:var(--warning);font-size:11px" title="Darsning shu qismi yozib olingan video/audio">Video ${Math.round(r.media_pct)}%</span></div>` : ""}</td>
                     <td class="num">${r.overall_score != null ? `<span class="score-chip ${scoreColor(r.overall_score)}">${r.overall_score}%</span>` : "—"}</td>
                     <td><span class="tag" style="color:${st.color}">${escapeHtml(st.label)}</span>${
                         r.error ? `<div class="sub" style="color:var(--danger);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeAttr(r.error)}">${escapeHtml(r.error)}</div>` : ""
@@ -1847,7 +1938,8 @@ async function renderRecordingDetail(id) {
     </section>
 
     ${r.error ? `<div class="error show" style="margin-bottom:14px">${escapeHtml(r.error)}</div>` : ""}
-    ${r.status === "awaiting_assignment" ? `<div class="cov-note" style="margin-bottom:14px">${I.info} Transkript tayyor. O'qituvchi, fan va mavzuni biriktiring — AI baholash avtomatik boshlanadi va dars ro'yxatga tushadi.</div>` : ""}
+    ${r.status === "awaiting_assignment" ? `<div class="cov-note" style="margin-bottom:14px">${I.info} ${tr ? "Transkript tayyor. O'qituvchi, fan va mavzuni biriktiring — AI baholash avtomatik boshlanadi va dars ro'yxatga tushadi." : "Audio saqlandi. Bu haqiqiy dars bo'lsa — o'qituvchi, fan va mavzuni biriktiring: shundan keyingina transkripsiya (pullik STT) va AI baholash boshlanadi. Bo'sh xona yozuvi bo'lsa — o'chirib yuboring."}</div>` : ""}
+    ${r.status === "stt_batch" ? `<div class="cov-note" style="margin-bottom:14px">${I.clock} Transkripsiya Gemini Batch navbatida (narx 50%). Odatda 10–60 daqiqa, kafolat 24 soat; tayyor bo'lgach AI baholash o'zi boshlanadi. Yuborilgan: ${fmtDateTime(r.batch_submitted_at)}</div>` : ""}
     ${r.status === "skipped" ? `<div class="cov-note" style="margin-bottom:14px">${I.warn} Bu artifact profili (${escapeHtml(r.profile || "—")}) qayta ishlanadigan profilga mos emas — audiotap'da "speech" profilini yoqing.</div>` : ""}
     <div id="d-player" style="display:none;margin-bottom:14px"></div>
 
@@ -1857,6 +1949,8 @@ async function renderRecordingDetail(id) {
       <div class="kpi"><div class="kpi-head"><div class="kpi-label">Transkript</div><div class="kpi-icon violet">${I.book}</div></div><div class="kpi-value">${tr ? tr.word_count : 0} <span style="font-size:14px;color:var(--text-subtle);font-weight:500">so'z</span></div></div>
       <div class="kpi"><div class="kpi-head"><div class="kpi-label">Audio fayl</div><div class="kpi-icon slate">${I.mic}</div></div><div class="kpi-value" style="font-size:20px">${fmtSize(r.size_bytes)}</div></div>
     </div>
+
+    ${tr && tr.stats ? lessonTimelineHtml(tr.stats, an && an.timeline) : ""}
 
     <div class="dash-grid">
       <div class="card">
@@ -1892,7 +1986,7 @@ async function renderRecordingDetail(id) {
           ${an ? `${recCriteriaHtml(an)}${an.summary ? `<p style="margin-top:14px;font-size:13px;line-height:1.65">${escapeHtml(an.summary)}</p>` : ""}`
             : emptyStateHtml(
               r.status === "awaiting_assignment" ? "Biriktirish kutilmoqda" : "Baho hali tayyor emas",
-              r.status === "awaiting_assignment" ? "O'qituvchi, fan va mavzu biriktirilgach AI avtomatik baholaydi." : "Qayta ishlash tugagach natija shu yerda chiqadi."
+              r.status === "awaiting_assignment" ? (tr ? "O'qituvchi, fan va mavzu biriktirilgach AI avtomatik baholaydi." : "Biriktirilgach transkripsiya va AI baholash boshlanadi (STT faqat haqiqiy darslar uchun).") : "Qayta ishlash tugagach natija shu yerda chiqadi."
             )}
         </div>
       </div>
@@ -1936,7 +2030,7 @@ async function renderRecordingDetail(id) {
         <button class="btn-secondary btn-sm" id="tr-toggle">${I.eye} Ko'rsatish</button>
       </div>
       <div class="card-body" id="tr-body" style="display:none">
-        <div style="white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:480px;overflow-y:auto">${escapeHtml(tr.text)}</div>
+        <div style="font-size:13px;line-height:1.7;max-height:480px;overflow-y:auto">${labeledTranscriptHtml(tr.text)}</div>
       </div>
     </div>` : ""}
 
@@ -2207,7 +2301,7 @@ async function injectAudiotapSettings() {
   const ok = (v) => v ? `<span class="tag" style="color:var(--success)">${I.ok} O'rnatilgan</span>` : `<span class="tag" style="color:var(--danger)">${I.xmark} O'rnatilmagan</span>`;
   const row = (k, v) => `<div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center"><span class="sub">${escapeHtml(k)}</span><span style="text-align:right">${v}</span></div>`;
   const counts = sys.counts || {};
-  const order = ["queued", "downloading", "stored", "transcribing", "awaiting_assignment", "analyzing", "done", "failed", "skipped"];
+  const order = ["queued", "downloading", "stored", "transcribing", "stt_batch", "awaiting_assignment", "analyzing", "done", "failed", "skipped"];
   const u = Auth.user || {};
 
   box.innerHTML = `
@@ -2232,6 +2326,9 @@ async function injectAudiotapSettings() {
           ${row("Bazaga yozilmay qolganlar (R2 zaxira)", sys.pending_webhooks > 0
             ? `<span class="tag" style="color:var(--warning)">${sys.pending_webhooks} ta</span> <button class="btn-secondary btn-sm" id="replay-btn">${I.refresh} Qayta ishlash</button>`
             : sys.pending_webhooks === -1 ? `<span class="tag muted">noma'lum</span>` : `<span class="tag" style="color:var(--success)">yo'q</span>`)}
+          ${row("Gemini sarfi (hisoblangan)", sys.gemini_usage
+            ? `<b>bugun ${Number(sys.gemini_usage.today).toFixed(2)}</b> · 7 kun ${Number(sys.gemini_usage.week).toFixed(2)} · jami ${Number(sys.gemini_usage.total).toFixed(2)} <span class="sub">(${sys.gemini_usage.today_calls || 0} chaqiruv bugun; usageMetadata bo'yicha, ${sys.gemini_usage.since ? escapeHtml(String(sys.gemini_usage.since).slice(0, 10)) + " dan" : "—"})</span>`
+            : `<span class="tag muted">—</span>`)}
           ${!sys.last_webhook_at ? `<div class="cov-note" style="margin-top:12px">${I.info} Hali birorta webhook kelmagan. Audiotap'da webhook target yaratib, yuqoridagi URL va secret'ni kiriting.</div>` : ""}
         </div>
       </div>

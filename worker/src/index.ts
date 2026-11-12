@@ -34,9 +34,9 @@ import {
   handleUpdateEvalQuestion, handleDeleteEvalQuestion,
   handleEvalQuestionResults,
 } from "./admin-eval";
-import { Env, Job, CORS } from "./types";
+import { Env, Job, CORS, cleanEnv } from "./types";
 import { handleWebhook, replayPendingWebhooks, countPendingWebhooks } from "./webhook";
-import { runJob } from "./pipeline";
+import { runJob, pollSttBatches } from "./pipeline";
 import * as rec from "./recordings";
 import * as dash from "./dashboard";
 import * as dir from "./directory";
@@ -141,8 +141,18 @@ async function handleSystemInfo(request: Request, env: Env): Promise<Response> {
     `SELECT id, email, name, role, active, created_at FROM users WHERE role = 'admin' ORDER BY id`
   ).all();
   const base = env.AUDIOTAP_BASE_URL || "";
+  // Gemini sarfi (usageMetadata bo'yicha hisoblangan, 2026-09-23 dan)
+  const usage = await env.DB.prepare(
+    `SELECT COALESCE(SUM(CASE WHEN created_at >= date('now') THEN usd END), 0) AS today,
+            COALESCE(SUM(CASE WHEN created_at >= date('now','-7 days') THEN usd END), 0) AS week,
+            COALESCE(SUM(usd), 0) AS total,
+            SUM(CASE WHEN created_at >= date('now') THEN 1 ELSE 0 END) AS today_calls,
+            MIN(created_at) AS since
+       FROM gemini_usage`
+  ).first<any>().catch(() => null);
   return json({
     time: new Date().toISOString(),
+    gemini_usage: usage,
     webhook_url: `${origin}/api/webhooks/audiotap`,
     vars: {
       gemini_model: env.GEMINI_MODEL || "",
@@ -327,7 +337,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, rawEnv: Env, _ctx: ExecutionContext): Promise<Response> {
+    const env = cleanEnv(rawEnv);
     const res = await handleRequest(request, env);
     // Admin panel bir xil domenda (Worker assets) — CORS faqat lokal dev uchun kerak.
     const h = new Headers(res.headers);
@@ -336,7 +347,8 @@ export default {
   },
 
   /** Queue consumer — bitta xabar = bitta yozuv. */
-  async queue(batch: MessageBatch<Job>, env: Env): Promise<void> {
+  async queue(batch: MessageBatch<Job>, rawEnv: Env): Promise<void> {
+    const env = cleanEnv(rawEnv);
     for (const msg of batch.messages) {
       try {
         await runJob(msg.body, env);
@@ -349,13 +361,22 @@ export default {
   },
 
   /** Cron — R2 zaxirasini qayta ishlash + osilib qolgan ishlarni tiklash (har 10 daqiqada). */
-  async scheduled(_evt: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_evt: ScheduledController, rawEnv: Env, ctx: ExecutionContext): Promise<void> {
+    const env = cleanEnv(rawEnv);
     ctx.waitUntil((async () => {
       try {
         const r = await replayPendingWebhooks(env);
         if (r.replayed || r.failed) console.log("Cron replay:", JSON.stringify(r));
       } catch (e: any) {
         console.error("Cron replay xatosi:", e?.message || e);
+      }
+
+      // Gemini Batch STT: tayyor job'lar → stt_collect; uzoq kutganlar → sinxron zaxira.
+      try {
+        const b = await pollSttBatches(env);
+        if (b.checked) console.log("Cron batch:", JSON.stringify(b));
+      } catch (e: any) {
+        console.error("Cron batch xatosi:", e?.message || e);
       }
 
       const stuck = await env.DB.prepare(
@@ -1021,8 +1042,8 @@ async function reevaluateLessonRow(env: Env, lesson: any): Promise<LessonEvaluat
   if (!evaluation.overall_score && !evaluation.summary) return { ok: false };
   await env.DB.prepare(`
     INSERT OR REPLACE INTO evaluations
-    (lesson_id, overall_score, topic_score, speech_score, method_score, interaction_score, feedback_score, summary, strengths, improvements, advice)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (lesson_id, overall_score, topic_score, speech_score, method_score, interaction_score, feedback_score, summary, strengths, improvements, advice, model, timeline)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     lesson.id,
     evaluation.overall_score,
@@ -1034,7 +1055,9 @@ async function reevaluateLessonRow(env: Env, lesson: any): Promise<LessonEvaluat
     evaluation.summary,
     JSON.stringify(evaluation.strengths),
     JSON.stringify(evaluation.improvements),
-    JSON.stringify(evaluation.advice)
+    JSON.stringify(evaluation.advice),
+    evaluation.model || "",
+    evaluation.timeline ? JSON.stringify(evaluation.timeline) : ""
   ).run();
   return { ok: true, evaluation };
 }

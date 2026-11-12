@@ -306,15 +306,29 @@ export async function handleListSubjects(admin: any, env: Env): Promise<Response
   const [instId, err] = await requireInstitution(admin);
   if (err) return err;
   const instType = await getInstitutionType(instId, env);
+  // Aggregate once per table and join, instead of three correlated subqueries
+  // per subject row. With large data (thousands of subjects, tens of thousands
+  // of teacher_groups) the correlated form scanned ~100M rows and hit D1's CPU limit.
   const rows = await env.DB.prepare(
     `SELECT s.*,
-      (SELECT COUNT(DISTINCT ts.teacher_id) FROM teacher_subjects ts WHERE ts.subject_id = s.id) as teacher_count,
-      (SELECT COUNT(DISTINCT tg.group_id) FROM teacher_groups tg WHERE tg.subject_id = s.id) as group_count,
-      (SELECT COUNT(DISTINCT sg.student_id)
-         FROM teacher_groups tg
-         JOIN student_groups sg ON sg.group_id = tg.group_id
-         WHERE tg.subject_id = s.id) as student_count
+      COALESCE(tc.c, 0) AS teacher_count,
+      COALESCE(gc.c, 0) AS group_count,
+      COALESCE(sc.c, 0) AS student_count
      FROM subjects s
+     LEFT JOIN (
+       SELECT subject_id, COUNT(DISTINCT teacher_id) AS c
+       FROM teacher_subjects GROUP BY subject_id
+     ) tc ON tc.subject_id = s.id
+     LEFT JOIN (
+       SELECT subject_id, COUNT(DISTINCT group_id) AS c
+       FROM teacher_groups WHERE subject_id IS NOT NULL GROUP BY subject_id
+     ) gc ON gc.subject_id = s.id
+     LEFT JOIN (
+       SELECT tg.subject_id, COUNT(DISTINCT sg.student_id) AS c
+       FROM (SELECT DISTINCT subject_id, group_id FROM teacher_groups WHERE subject_id IS NOT NULL) tg
+       JOIN student_groups sg ON sg.group_id = tg.group_id
+       GROUP BY tg.subject_id
+     ) sc ON sc.subject_id = s.id
      WHERE s.institution_id = ? AND (s.type IS NULL OR s.type = ?)
      ORDER BY s.name`
   ).bind(instId, instType).all();
@@ -323,22 +337,6 @@ export async function handleListSubjects(admin: any, env: Env): Promise<Response
     applicable_grades: safeJson(r.applicable_grades, []),
     meta: safeJson(r.meta, {}),
   })));
-}
-
-// ═══════════════════════════════════════════════════════════════
-// AUDITORIUMS (HEMIS rooms, read-only reference)
-// ═══════════════════════════════════════════════════════════════
-
-export async function handleListAuditoriums(admin: any, env: Env): Promise<Response> {
-  const [instId, err] = await requireInstitution(admin);
-  if (err) return err;
-  const rows = await env.DB.prepare(
-    `SELECT id, hemis_code, name, type_name, building_name, volume, active
-     FROM auditoriums
-     WHERE institution_id = ?
-     ORDER BY building_name, name`
-  ).bind(instId).all();
-  return json(rows.results);
 }
 
 export async function handleCreateSubject(request: Request, admin: any, env: Env): Promise<Response> {

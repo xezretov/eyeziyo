@@ -25,6 +25,28 @@ AUDIOTAP_BASE_URL = "https://soft-mixer.taila38ca0.ts.net/api"
 TARGET_PROFILE = "speech"
 # Shu hajmdan katta fayl Worker xotirasiga sig'maydi (limit 128MB).
 MAX_INGEST_MB = "90"
+# Uzun Ogg Opus yozuv STT uchun shu uzunlikdagi bo'laklarga bo'linadi (src/ogg.ts).
+# Bitta so'rovda 80 daqiqalik audio ishonchsiz (token limiti / takrorlash sikli).
+# 2026-09-24: 300 s. 10 daqiqalik bo'lak o'zbek nutqida 4096 token chiqishga sig'maydi (~3 token/so'z,
+# 1300+ so'z) — MAX_TOKENS "sikl" deb qayta ishlanib pul ketardi; 5 daqiqada ≤ ~2500 token, sikl ham kam.
+STT_CHUNK_SEC = "300"
+# STT (nutqni matnga) modeli. flash-lite uzun bo'laklarda takrorlash sikliga tushadi
+# yoki RECITATION bilan bo'sh qaytaradi (2026-09-15 tajribasi) — flash barqaror.
+# Baholash/polish GEMINI_MODEL da qoladi.
+STT_MODEL = "gemini-2.5-flash"
+# STT rejimi. "manual" (default): audio yuklab olinadi, lekin pullik Gemini STT faqat admin
+# o'qituvchi/fan/mavzuni biriktirgandan keyin boshlanadi. "auto": har yozuv darhol STT.
+# 2026-09-22: audiotap har 1.5 soatda 80 daq yozuv yuboradi (dars bo'lmasa ham) — 26 yozuv
+# avtomatik STT + takroriy o'tishlar bilan ~$24 ketgan.
+STT_MODE = "manual"
+# Kunlik STT limiti (audio daqiqa, 0 = cheksiz). Oshsa yozuv "Biriktirish kutilmoqda" da qoladi,
+# "Qayta ishlash → transkripsiya" limitni chetlab o'tadi.
+STT_DAILY_LIMIT_MIN = "600"
+# STT Gemini Batch API orqali (kirish/chiqish 50% narx). Bo'laklar Files API ga yuklanadi, bitta job;
+# cron har 10 daqiqada tekshiradi, natija odatda 10–60 daqiqada (kafolat 24 soat). "off" — sinxron.
+STT_BATCH = "on"
+# Batch shu soatdan uzoq PENDING/RUNNING qolsa bekor qilinib sinxron STT bilan davom etadi.
+STT_BATCH_MAX_HOURS = "36"
 
 # Secrets — `wrangler secret put <NAME>`, HECH QACHON bu faylga yozilmaydi:
 #   GEMINI_API_KEY

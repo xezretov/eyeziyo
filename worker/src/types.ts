@@ -8,6 +8,12 @@ export interface Env {
   AUDIOTAP_BASE_URL?: string;
   TARGET_PROFILE?: string;
   MAX_INGEST_MB?: string;
+  STT_MODEL?: string;       // STT uchun birlamchi model (default gemini-2.5-flash)
+  STT_CHUNK_SEC?: string;   // Ogg Opus bo'lak uzunligi (soniya), default 600
+  STT_MODE?: string;        // "manual" (default): STT faqat biriktirishdan keyin; "auto": har yozuv darhol
+  STT_DAILY_LIMIT_MIN?: string; // kunlik STT limiti (audio daqiqa), 0 = cheksiz
+  STT_BATCH?: string;       // "on" (default): STT Gemini Batch orqali (50% narx); "off": sinxron
+  STT_BATCH_MAX_HOURS?: string; // batch shu soatdan uzoq kutsa bekor + sinxron zaxira (default 36)
 
   // secrets
   GEMINI_API_KEY: string;
@@ -15,9 +21,30 @@ export interface Env {
   AUDIOTAP_WEBHOOK_SECRET: string;
 }
 
+/**
+ * Secret qiymatlarini tozalaydi: `wrangler secret put` ga fayldan (PowerShell
+ * UTF-8 BOM bilan yozadi) berilgan kalit boshida ko'rinmas U+FEFF va oxirida
+ * yangi qator qolishi mumkin — Google shunda "API key not valid" qaytaradi.
+ */
+export function cleanEnv(env: Env): Env {
+  const strip = (v: unknown) => {
+    if (typeof v !== "string") return v;
+    let s = v;
+    while (s.charCodeAt(0) === 0xfeff) s = s.slice(1); // U+FEFF (UTF-8 BOM)
+    return s.trim();
+  };
+  return {
+    ...env,
+    GEMINI_API_KEY: strip(env.GEMINI_API_KEY) as string,
+    JWT_SECRET: strip(env.JWT_SECRET) as string,
+    AUDIOTAP_WEBHOOK_SECRET: strip(env.AUDIOTAP_WEBHOOK_SECRET) as string,
+  };
+}
+
 /** Queue xabari. `ingest` = yuklab olish + STT, `analyze` = AI baholash. */
 export type Job =
-  | { type: "ingest"; recordingId: number }
+  | { type: "ingest"; recordingId: number; force?: boolean; sync?: boolean } // force: admin "qayta ishlash" — kesh/rejim/limit e'tiborsiz; sync: batch o'rniga sinxron STT
+  | { type: "stt_collect"; recordingId: number } // batch tayyor — natijani olish (cron yuboradi)
   | { type: "analyze"; recordingId: number };
 
 export const CORS = {
