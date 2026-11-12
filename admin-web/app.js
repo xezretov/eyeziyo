@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Eyeziyo Admin — Multi-tenant education management SPA
+// EduLensAI Admin — Multi-tenant education management SPA
 // Adaptive UI for university / school / training center
 // ═══════════════════════════════════════════════════════════════
 
@@ -185,6 +185,7 @@ function route(view, params) {
   else if (view === "group") renderGroup(params.id);
   else if (view === "subjects") renderSubjects();
   else if (view === "auditoriums") renderAuditoriums();
+  else if (view === "recordings") renderRecordings();
   else if (view === "evals") renderEvalQuestions();
   else if (view === "settings") renderSettings();
   else if (view && view.startsWith("hier:")) renderHierarchy(view.split(":")[1]);
@@ -289,7 +290,7 @@ function renderOnboard() {
         <div class="onboard-header">
           <img class="onboard-logo" src="/logo_eyeziyo.png" alt="">
           <h1>Muassasangizni sozlang</h1>
-          <p>Eyeziyo sizning universitet, maktab yoki o'quv markazingizga moslashadi. Bu qadam faqat bir marta bajariladi.</p>
+          <p>EduLensAI sizning universitet, maktab yoki o'quv markazingizga moslashadi. Bu qadam faqat bir marta bajariladi.</p>
         </div>
 
         <div class="onboard-step">
@@ -412,6 +413,8 @@ function buildNavItems() {
     ...(cfg.hasSubjects ? [{ key: "subjects", label: "Fanlar", icon: I.subjects }] : []),
     ...(AppState.institution?.type === "university" ? [{ key: "auditoriums", label: "Xonalar", icon: I.room }] : []),
     { key: "evals", label: "Baholash savollari", icon: I.star },
+    { section: "Audio" },
+    { key: "recordings", label: "Yozuvlar", icon: I.mic },
     { section: "Odamlar" },
     { key: "teachers", label: "O'qituvchilar", icon: I.teachers },
     { key: "students", label: cfg.groupLabel === "Bo'lim" ? "O'quvchilar" : "O'quvchilar", icon: I.students },
@@ -614,23 +617,27 @@ function renderKPIs({ teachers, stats, students, groups, subjects, topLevel, D }
   let scoreDelta = null;
   if (trend.length >= 2) scoreDelta = trend[trend.length - 1] - trend[trend.length - 2];
 
+  // Har karta o'z rangida (styles.css .kpi.tone-*): ko'rsatkich turi → rang, foiz kartalarda
+  // qiymat past bo'lsa (<50%) ogohlantirish rangi. Barcha ranglar loyiha palitrasidan.
+  const scoreTone = (v, base) => (Number(v) > 0 && Number(v) < 50 ? "danger" : base);
+  const avgTest = stats?.average_test_score ?? 0;
   const kpis = [
-    { icon: I.trending, color: "green", label: "Umumiy AI baho", value: `${engagement}%`,
-      spark: trend.length ? trend : sparkSeed(engagement, 4), sparkColor: "var(--success)", delta: scoreDelta, deltaSuffix: "%" },
-    { icon: I.mic, color: "blue", label: "Jami darslar", value: stats?.total_lessons ?? 0,
-      spark: sparkSeed(stats?.total_lessons ?? 0, 11), sparkColor: "var(--brand)" },
-    { icon: I.teachers, color: "cyan", label: "O'qituvchilar", value: teachers.length, route: "teachers",
-      spark: sparkSeed(teachers.length, 23), sparkColor: "var(--cyan)" },
-    { icon: I.students, color: "violet", label: "O'quvchilar", value: stats?.total_students ?? (students?.length || 0), route: "students",
-      spark: sparkSeed(stats?.total_students ?? (students?.length || 0), 37), sparkColor: "var(--accent)" },
-    { icon: I.groups, color: "amber", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups",
-      spark: sparkSeed(groups.length, 53), sparkColor: "var(--warning)" },
-    { icon: I.quiz, color: "slate", label: "O'rtacha test bali", value: `${stats?.average_test_score ?? 0}%`,
-      spark: sparkSeed(stats?.average_test_score ?? 0, 71), sparkColor: "var(--text-muted)" },
+    { icon: I.trending, color: "green", tone: scoreTone(engagement, "success"), label: "Umumiy AI baho", value: `${engagement}%`,
+      spark: trend.length ? trend : sparkSeed(engagement, 4), sparkColor: "var(--kt)", delta: scoreDelta, deltaSuffix: "%" },
+    { icon: I.mic, color: "blue", tone: "brand", label: "Jami darslar", value: stats?.total_lessons ?? 0,
+      spark: sparkSeed(stats?.total_lessons ?? 0, 11), sparkColor: "var(--kt)" },
+    { icon: I.teachers, color: "cyan", tone: "info", label: "O'qituvchilar", value: teachers.length, route: "teachers",
+      spark: sparkSeed(teachers.length, 23), sparkColor: "var(--kt)" },
+    { icon: I.students, color: "violet", tone: "accent", label: "O'quvchilar", value: stats?.total_students ?? (students?.length || 0), route: "students",
+      spark: sparkSeed(stats?.total_students ?? (students?.length || 0), 37), sparkColor: "var(--kt)" },
+    { icon: I.groups, color: "amber", tone: "warning", label: cfg.groupLabel === "Bo'lim" ? "Bo'limlar" : "Guruhlar", value: groups.length, route: "groups",
+      spark: sparkSeed(groups.length, 53), sparkColor: "var(--kt)" },
+    { icon: I.quiz, color: "slate", tone: scoreTone(avgTest, "indigo"), label: "O'rtacha test bali", value: `${avgTest}%`,
+      spark: sparkSeed(avgTest, 71), sparkColor: "var(--kt)" },
   ];
 
   kpi.innerHTML = kpis.map((k) => `
-    <div class="kpi kpi-spark${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
+    <div class="kpi kpi-spark tone-${k.tone || "brand"}${k.route ? " kpi-clickable" : ""}"${k.route ? ` data-route="${escapeAttr(k.route)}" tabindex="0" role="button" aria-label="${escapeAttr(k.label)} bo'limiga o'tish"` : ""}>
       <div class="kpi-head">
         <div class="kpi-label">${escapeHtml(k.label)}</div>
         <div class="kpi-icon ${k.color}">${k.icon}</div>
@@ -728,15 +735,6 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
   const strongest = sortedCrit[0];
   const weakest = sortedCrit[sortedCrit.length - 1];
 
-  const trendVals = (D.score_trend || []).map(p => p.value);
-  const trendLabels = (D.score_trend || []).map((_, i) => `D${i + 1}`);
-
-  const speaking = D.speaking || { teacher: 65, student: 35 };
-  const speakItems = [
-    { name: "O'qituvchi nutqi", count: speaking.teacher },
-    { name: "O'quvchi nutqi", count: speaking.student },
-  ];
-
   const dist = D.distribution || { excellent: 0, good: 0, average: 0, weak: 0 };
   const distBars = [
     { label: "A'lo (85+)", key: "excellent", count: dist.excellent, color: "var(--success)" },
@@ -745,11 +743,6 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
     { label: "Zaif (<50)", key: "weak", count: dist.weak, color: "var(--danger)" },
   ];
   const distTotal = distBars.reduce((s, b) => s + b.count, 0) || 1;
-
-  const heatmap = D.heatmap || Array.from({ length: 7 }, () => [0, 0, 0, 0]);
-  const heatMax = Math.max(1, ...heatmap.flat());
-  const dayNames = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
-  const slotNames = ["Ertalab", "Tushlik", "Kunduz", "Kechqurun"];
 
   const alerts = D.alerts || [];
   const recent = D.recent_lessons || [];
@@ -827,27 +820,56 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">Sustlashgan o'qituvchilar</div>
-            <div class="card-subtitle">14+ kun dars yozmaganlar</div>
+            <div class="card-title">Sifat taqsimoti</div>
+            <div class="card-subtitle">${D.evaluated_lessons || 0} ta baholangan dars</div>
           </div>
-          ${idleTeachers.length ? `<span class="pill warning">${idleTeachers.length}</span>` : ""}
         </div>
-        <div class="card-body" style="padding:0">
-          ${idleTeachers.length === 0
-            ? `<div class="empty-note">${I.ok} Barcha faol o'qituvchilar muntazam yozmoqda</div>`
-            : idleTeachers.map(t => `
-              <div class="alert-row" data-tid="${t.teacher_id}">
-                <span class="alert-ico warning">${I.clock}</span>
-                <div class="alert-body">
-                  <div class="alert-title">${escapeHtml(t.teacher_name)}</div>
-                  <div class="alert-sub">Oxirgi dars: ${escapeHtml(fmtDate(t.last_lesson_at))} · jami ${t.lessons} dars</div>
-                </div>
+        <div class="card-body">
+          <div class="dist-stacked" style="display:flex;height:26px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:14px">
+            ${distBars.map(b => {
+              const w = Math.round((b.count / distTotal) * 100);
+              return w > 0 ? `<div title="${b.label}: ${b.count}" style="width:${w}%;background:${b.color};min-width:${w > 3 ? 0 : 4}px"></div>` : "";
+            }).join("")}
+          </div>
+          <div class="dist-list">
+            ${distBars.map(b => `
+              <div class="dist-row" style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
+                <span class="dist-name" style="display:flex;align-items:center;gap:8px"><span class="sw" style="background:${b.color}"></span>${escapeHtml(b.label)}</span>
+                <span style="display:flex;align-items:center;gap:12px">
+                  <span style="font-weight:600;min-width:28px;text-align:right">${b.count}</span>
+                  <span style="color:var(--text-muted);font-size:12px;min-width:36px;text-align:right">${Math.round((b.count / distTotal) * 100)}%</span>
+                </span>
               </div>
             `).join("")}
+          </div>
         </div>
       </div>
     </div>
   ` : "";
+
+  const idleCard = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Sustlashgan o'qituvchilar</div>
+          <div class="card-subtitle">14+ kun dars yozmaganlar</div>
+        </div>
+        ${idleTeachers.length ? `<span class="pill warning">${idleTeachers.length}</span>` : ""}
+      </div>
+      <div class="card-body" style="padding:0">
+        ${idleTeachers.length === 0
+          ? `<div class="empty-note">${I.ok} Barcha faol o'qituvchilar muntazam yozmoqda</div>`
+          : idleTeachers.map(t => `
+            <div class="alert-row" data-tid="${t.teacher_id}">
+              <span class="alert-ico warning">${I.clock}</span>
+              <div class="alert-body">
+                <div class="alert-title">${escapeHtml(t.teacher_name)}</div>
+                <div class="alert-sub">Oxirgi dars: ${escapeHtml(fmtDate(t.last_lesson_at))} · jami ${t.lessons} dars</div>
+              </div>
+            </div>
+          `).join("")}
+      </div>
+    </div>`;
 
   const groupPerfCard = groupPerf.length ? `
     <div class="card">
@@ -888,15 +910,19 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
           <div class="quality-wrap">
             <div class="quality-gauge">${gaugeRing(engagement)}</div>
             <div class="criteria-list">
-              ${critList.map(c => `
+              ${critList.map(c => {
+                const pctClamped = Math.min(100, Math.max(0, c.pct));
+                const tag = pctClamped >= 80 ? "A'lo" : pctClamped >= 60 ? "Yaxshi" : pctClamped >= 40 ? "O'rta" : "Zaif";
+                const tagCls = pctClamped >= 80 ? "success" : pctClamped >= 60 ? "brand" : pctClamped >= 40 ? "warning" : "danger";
+                return `
                 <div class="crit-row">
                   <div class="crit-top">
-                    <span class="crit-name">${escapeHtml(c.label)}</span>
+                    <span class="crit-name">${escapeHtml(c.label)} <span class="ai-tag ${tagCls}" style="font-size:10px;padding:1px 6px">${tag}</span></span>
                     <span class="crit-val">${c.value.toFixed(1)}<span class="crit-max">/20</span></span>
                   </div>
-                  <div class="crit-bar-wrap"><div class="crit-bar" style="width:${c.pct}%;background:${c.color}"></div></div>
-                </div>
-              `).join("")}
+                  <div class="crit-bar-wrap"><div class="crit-bar" style="width:${pctClamped}%;background:${c.color}"></div></div>
+                </div>`;
+              }).join("")}
             </div>
           </div>
         </div>
@@ -920,6 +946,8 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
           <div class="ai-facts">
             <div class="ai-fact"><span class="dot ok"></span> Eng kuchli: <b>${escapeHtml(strongest?.label || "—")}</b> · ${strongest?.pct || 0}%</div>
             <div class="ai-fact"><span class="dot warn"></span> Zaif tomon: <b>${escapeHtml(weakest?.label || "—")}</b> · ${weakest?.pct || 0}%</div>
+            <div class="ai-fact"><span class="dot ok"></span> Bu hafta: <b>${week?.lessons?.current ?? 0} dars</b> yozildi · o'tgan hafta ${week?.lessons?.previous ?? 0}</div>
+            ${alerts.length ? `<div class="ai-fact"><span class="dot warn"></span> <b>${alerts.length} o'qituvchi</b> past baho bilan e'tibor talab qiladi</div>` : ""}
           </div>
           <div class="ai-reco">
             <div class="ai-reco-title">${I.trending} Tavsiya</div>
@@ -929,114 +957,7 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
       </div>
     </div>
 
-    <!-- Sifat trendi + so'zlash balansi -->
-    <div class="dash-grid">
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Dars sifati trendi</div>
-            <div class="card-subtitle">Baholangan darslar bo'yicha o'rtacha ball</div>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          ${lineChart(trendVals.length ? trendVals : [0, 0, 0, 0, 0], trendLabels)}
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--brand)"></span>O'rtacha ball</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">So'zlash balansi</div>
-            <div class="card-subtitle">O'qituvchi / o'quvchi nutqi (baho)</div>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          ${donutChart(speakItems)}
-          <div class="donut-rows">
-            ${speakItems.map((d, i) => `
-              <div class="donut-row">
-                <span class="sw" style="background:${donutColor(i)}"></span>
-                <span class="nm">${escapeHtml(d.name)}</span>
-                <span class="vl">${d.count}%</span>
-                <span class="pc"></span>
-              </div>
-            `).join("")}
-          </div>
-          <div class="chart-note">Interaktivlik bahosidan hisoblangan taxminiy nisbat</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Haftalik faollik xaritasi + sifat taqsimoti -->
-    <div class="dash-grid">
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Haftalik faollik xaritasi</div>
-            <div class="card-subtitle">Kun va vaqt bo'yicha yozilgan darslar</div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="heatmap">
-            <div class="heat-corner"></div>
-            ${slotNames.map(s => `<div class="heat-colh">${s}</div>`).join("")}
-            ${heatmap.map((row, di) => `
-              <div class="heat-rowh">${dayNames[di]}</div>
-              ${row.map((v, si) => `<div class="heat-cell" title="${dayNames[di]} · ${slotNames[si]}: ${v} dars" style="--i:${(v / heatMax).toFixed(2)}">${v || ""}</div>`).join("")}
-            `).join("")}
-          </div>
-          <div class="heat-legend"><span>Kam</span><span class="heat-scale"></span><span>Ko'p</span></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Sifat taqsimoti</div>
-            <div class="card-subtitle">Baholangan darslar darajasi</div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="dist-list">
-            ${distBars.map(b => `
-              <div class="dist-row">
-                <div class="dist-top"><span class="dist-name"><span class="sw" style="background:${b.color}"></span>${escapeHtml(b.label)}</span><span class="dist-val">${b.count}</span></div>
-                <div class="dist-bar-wrap"><div class="dist-bar" style="width:${Math.round((b.count / distTotal) * 100)}%;background:${b.color}"></div></div>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Muassasa tuzilmasi -->
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Muassasa tuzilmasi</div>
-          <div class="card-subtitle">Iyerarxiya bo'yicha umumiy ko'rsatkichlar</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="hier-flow">
-          ${hierarchySummary.map((h, i) => `
-            <div class="hier-step${h.route ? " hier-step-clickable" : ""}"${h.route ? ` data-route="${escapeAttr(h.route)}" tabindex="0" role="button" aria-label="${escapeAttr(h.label)} bo'limiga o'tish"` : ""}>
-              <div class="hier-icon">${h.icon}</div>
-              <div class="hier-body">
-                <div class="hier-count">${h.count}</div>
-                <div class="hier-label">${escapeHtml(h.label)}</div>
-              </div>
-            </div>
-            ${i < hierarchySummary.length - 1 ? `<div class="hier-arrow">${I.arrow}</div>` : ""}
-          `).join("")}
-        </div>
-      </div>
-    </div>
-
-    <!-- Haftalik dinamika + qamrov + sustlashganlar -->
+    <!-- Haftalik dinamika + qamrov + sifat taqsimoti -->
     ${insightsSection}
 
     <!-- Ogohlantirishlar + tavsiyalar + top o'qituvchilar -->
@@ -1065,25 +986,7 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">AI tavsiyalar</div>
-            <div class="card-subtitle">Sifatni oshirish uchun</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding:0">
-          ${sortedCrit.slice().reverse().slice(0, 4).map(c => `
-            <div class="reco-row">
-              <span class="reco-ico" style="color:${c.color}">${I.info}</span>
-              <div class="reco-body">
-                <div class="reco-title">${escapeHtml(c.label)} · ${c.pct}%</div>
-                <div class="reco-sub">${escapeHtml(CRITERIA_ADVICE[c.key])}</div>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
+      ${idleCard}
 
       <div class="card">
         <div class="card-header">
@@ -1139,22 +1042,44 @@ function renderDashBody({ D, sorted, teachers, students, groups, levelCounts = [
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">Faoliyat tarixi</div>
-            <div class="card-subtitle">So'nggi voqealar</div>
+            <div class="card-title">AI tavsiyalar</div>
+            <div class="card-subtitle">Sifatni oshirish uchun</div>
           </div>
         </div>
-        <div class="card-body">
-          ${recent.length === 0
-            ? `<div class="empty-note">Faoliyat yo'q</div>`
-            : `<div class="timeline">${recent.map(l => `
-                <div class="tl-item">
-                  <div class="tl-dot ${scoreColor(l.score)}"></div>
-                  <div class="tl-body">
-                    <div class="tl-title"><b>${escapeHtml(l.teacher_name || "O'qituvchi")}</b> "${escapeHtml(l.topic || "dars")}" darsini yakunladi</div>
-                    <div class="tl-meta">${escapeHtml(fmtDate(l.created_at))} · ${l.score}% baho</div>
-                  </div>
-                </div>
-              `).join("")}</div>`}
+        <div class="card-body" style="padding:0">
+          ${sortedCrit.slice().reverse().slice(0, 4).map(c => `
+            <div class="reco-row">
+              <span class="reco-ico" style="color:${c.color}">${I.info}</span>
+              <div class="reco-body">
+                <div class="reco-title">${escapeHtml(c.label)} · ${c.pct}%</div>
+                <div class="reco-sub">${escapeHtml(CRITERIA_ADVICE[c.key])}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Muassasa tuzilmasi -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Muassasa tuzilmasi</div>
+          <div class="card-subtitle">Iyerarxiya bo'yicha umumiy ko'rsatkichlar</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="hier-flow">
+          ${hierarchySummary.map((h, i) => `
+            <div class="hier-step${h.route ? " hier-step-clickable" : ""}"${h.route ? ` data-route="${escapeAttr(h.route)}" tabindex="0" role="button" aria-label="${escapeAttr(h.label)} bo'limiga o'tish"` : ""}>
+              <div class="hier-icon">${h.icon}</div>
+              <div class="hier-body">
+                <div class="hier-count">${h.count}</div>
+                <div class="hier-label">${escapeHtml(h.label)}</div>
+              </div>
+            </div>
+            ${i < hierarchySummary.length - 1 ? `<div class="hier-arrow">${I.arrow}</div>` : ""}
+          `).join("")}
         </div>
       </div>
     </div>
@@ -1666,6 +1591,279 @@ async function renderAuditoriums() {
     document.getElementById("aud-search").addEventListener("input", debounce((e) => { AuditoriumsState.q = e.target.value; renderAuditoriums(); }, 150));
   } catch (err) {
     document.getElementById("aud-body").innerHTML = `<div class="error show">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIOTAP RECORDINGS (mikrofondan kelgan yozuvlar)
+// ═══════════════════════════════════════════════════════════════
+const RecordingsState = { q: "", status: "" };
+
+// Ijro etilayotgan blob URL — qayta render bo'lganda tozalanadi, aks holda
+// har bosishda xotirada yangi blob qoladi.
+let currentAudioUrl = null;
+function releaseAudioUrl() {
+  if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); currentAudioUrl = null; }
+}
+
+function fmtSize(bytes) {
+  const n = Number(bytes) || 0;
+  if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
+  if (n >= 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${n} B`;
+}
+
+function fmtDuration(sec) {
+  const s = Math.round(Number(sec) || 0);
+  if (s <= 0) return "—";
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}:${String(s % 60).padStart(2, "0")}` : `${s}s`;
+}
+
+// uz-UZ lokali qisqa oyni "M08" ko'rinishida beradi, shuning uchun oy nomini
+// o'zimiz yozamiz.
+const UZ_MONTHS = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek"];
+
+function fmtDateTime(raw) {
+  if (!raw) return "—";
+  try {
+    // D1 `created_at` "YYYY-MM-DD HH:MM:SS" (UTC) ko'rinishida keladi — ISO ga o'tkazamiz.
+    const d = new Date(raw.includes("T") ? raw : raw.replace(" ", "T") + "Z");
+    if (isNaN(d)) return raw;
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${d.getDate()} ${UZ_MONTHS[d.getMonth()]}, ${hh}:${mm}`;
+  } catch { return raw; }
+}
+
+const REC_STATUS = {
+  stored: { label: "Saqlangan", color: "var(--success)" },
+  downloading: { label: "Yuklanmoqda", color: "var(--warning)" },
+  received: { label: "Qabul qilingan", color: "var(--warning)" },
+  failed: { label: "Xato", color: "var(--danger)" },
+};
+
+async function renderRecordings() {
+  releaseAudioUrl();
+  setBreadcrumbs([{ label: "Dashboard", route: "dashboard" }, { label: "Yozuvlar" }]);
+  setMain(`
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Audio yozuvlar</h1>
+        <div class="page-subtitle">Audiotap mikrofonlaridan kelgan yozuvlar</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn-secondary btn-sm" id="rec-refresh">${I.refresh} Yangilash</button>
+      </div>
+    </div>
+    <div id="rec-player" style="display:none;margin-bottom:14px"></div>
+    <div id="rec-body">${skeletonBlock(320)}</div>
+  `);
+  document.getElementById("rec-refresh").addEventListener("click", () => renderRecordings());
+
+  try {
+    // Hammasini bir marta olamiz — status pill'laridagi sonlar to'g'ri chiqishi
+    // uchun filtrlash klient tomonida bajariladi.
+    const items = await api("/api/admin/audiotap/recordings?limit=200");
+
+    const q = RecordingsState.q.toLowerCase();
+    let filtered = RecordingsState.status
+      ? items.filter(x => x.status === RecordingsState.status)
+      : items;
+    if (q) {
+      filtered = filtered.filter(x =>
+        (x.source_name || "").toLowerCase().includes(q) ||
+        (x.schedule_name || "").toLowerCase().includes(q) ||
+        (x.recording_id || "").toLowerCase().includes(q));
+    }
+
+    const count = (s) => items.filter(x => x.status === s).length;
+    const totalBytes = items.reduce((a, x) => a + (Number(x.size_bytes) || 0), 0);
+    const partial = items.filter(x => x.completeness === "partial").length;
+
+    document.getElementById("rec-body").innerHTML = `
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-head"><div class="kpi-label">Jami yozuv</div><div class="kpi-icon blue">${I.mic}</div></div><div class="kpi-value">${items.length}</div></div>
+        <div class="kpi"><div class="kpi-head"><div class="kpi-label">Saqlangan</div><div class="kpi-icon green">${I.ok}</div></div><div class="kpi-value">${count("stored")}</div></div>
+        <div class="kpi"><div class="kpi-head"><div class="kpi-label">Xato</div><div class="kpi-icon red">${I.warn}</div></div><div class="kpi-value">${count("failed")}</div></div>
+        <div class="kpi"><div class="kpi-head"><div class="kpi-label">To'liq emas</div><div class="kpi-icon amber">${I.warn}</div></div><div class="kpi-value">${partial}</div></div>
+        <div class="kpi"><div class="kpi-head"><div class="kpi-label">Umumiy hajm</div><div class="kpi-icon slate">${I.book}</div></div><div class="kpi-value">${fmtSize(totalBytes)}</div></div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="rec-search" placeholder="Manba, jadval yoki ID..." value="${escapeAttr(RecordingsState.q)}">
+        </div>
+        <div class="filter-pills">
+          <button class="pill ${RecordingsState.status === "" ? "active" : ""}" data-st="">Hammasi (${items.length})</button>
+          <button class="pill ${RecordingsState.status === "stored" ? "active" : ""}" data-st="stored">Saqlangan (${count("stored")})</button>
+          <button class="pill ${RecordingsState.status === "failed" ? "active" : ""}" data-st="failed">Xato (${count("failed")})</button>
+          <button class="pill ${RecordingsState.status === "received" ? "active" : ""}" data-st="received">Kutilmoqda (${count("received")})</button>
+        </div>
+        <div class="spacer"></div>
+      </div>
+
+      ${filtered.length === 0 ? emptyStateHtml(
+        "Yozuvlar topilmadi",
+        "Audiotap webhook'i sozlanganini va yozuv olinganini tekshiring."
+      ) : `
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Manba</th>
+                  <th>Jadval</th>
+                  <th>Profil</th>
+                  <th class="num">Davomiylik</th>
+                  <th class="num">Hajm</th>
+                  <th>To'liqlik</th>
+                  <th>Status</th>
+                  <th>Yozilgan vaqt</th>
+                  <th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filtered.map(r => {
+                  const st = REC_STATUS[r.status] || { label: r.status || "—", color: "var(--text-faint)" };
+                  const isStored = r.status === "stored";
+                  return `
+                  <tr>
+                    <td><div style="display:flex;align-items:center;gap:8px">
+                      <div class="l-icon" style="width:28px;height:28px">${I.mic}</div>
+                      <strong>${escapeHtml(r.source_name || "—")}</strong>
+                    </div></td>
+                    <td>${escapeHtml(r.schedule_name || "—")}</td>
+                    <td><span class="tag">${escapeHtml(r.profile || "—")}${r.codec ? " · " + escapeHtml(r.codec) : ""}</span></td>
+                    <td class="num">${fmtDuration(r.duration_seconds)}</td>
+                    <td class="num">${fmtSize(r.size_bytes)}</td>
+                    <td>${r.completeness === "complete"
+                        ? '<span class="tag" style="color:var(--success)">To\'liq</span>'
+                        : r.completeness === "partial"
+                          ? `<span class="tag" style="color:var(--warning)" title="Yo'qolgan: ${Number(r.gap_seconds_total || 0).toFixed(2)}s">Qismiy</span>`
+                          : "—"}</td>
+                    <td><span class="tag" style="color:${st.color}">${escapeHtml(st.label)}</span>${
+                        r.error ? `<div class="sub" style="color:var(--danger);max-width:220px">${escapeHtml(r.error)}</div>` : ""
+                      }</td>
+                    <td>${fmtDateTime(r.started_at || r.created_at)}</td>
+                    <td>
+                      <div style="display:flex;gap:6px">
+                        ${isStored ? `
+                          <button class="btn-secondary btn-sm" data-play="${r.id}" title="Tinglash">Tinglash</button>
+                          <button class="btn-secondary btn-sm" data-dl="${r.id}" title="Yuklab olish">↓</button>
+                        ` : `
+                          <button class="btn-secondary btn-sm" data-retry="${r.id}" title="Qayta yuklash">${I.refresh}</button>
+                        `}
+                      </div>
+                    </td>
+                  </tr>
+                `; }).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `}
+    `;
+
+    document.getElementById("rec-search").addEventListener("input",
+      debounce((e) => { RecordingsState.q = e.target.value; renderRecordings(); }, 200));
+
+    document.querySelectorAll("#rec-body .pill[data-st]").forEach(b => {
+      b.addEventListener("click", () => { RecordingsState.status = b.dataset.st; renderRecordings(); });
+    });
+
+    const byId = new Map(items.map(x => [String(x.id), x]));
+    document.querySelectorAll("#rec-body [data-play]").forEach(b => {
+      b.addEventListener("click", () => playRecording(b.dataset.play, byId.get(b.dataset.play), b));
+    });
+    document.querySelectorAll("#rec-body [data-dl]").forEach(b => {
+      b.addEventListener("click", () => downloadRecording(b.dataset.dl, byId.get(b.dataset.dl), b));
+    });
+    document.querySelectorAll("#rec-body [data-retry]").forEach(b => {
+      b.addEventListener("click", () => retryRecording(b.dataset.retry, b));
+    });
+  } catch (err) {
+    document.getElementById("rec-body").innerHTML = `<div class="error show">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+/**
+ * Audio R2 dan admin token bilan olinadi, shuning uchun <audio src> to'g'ridan
+ * ishlamaydi — blob sifatida yuklab, object URL yaratamiz.
+ */
+async function fetchRecordingBlob(id) {
+  const res = await fetch(`${API}/api/admin/audiotap/recordings/${id}/audio`, {
+    headers: { Authorization: `Bearer ${Auth.token}` },
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res.blob();
+}
+
+async function playRecording(id, row, btn) {
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "…";
+  try {
+    const blob = await fetchRecordingBlob(id);
+    releaseAudioUrl();
+    currentAudioUrl = URL.createObjectURL(blob);
+
+    const box = document.getElementById("rec-player");
+    box.style.display = "";
+    box.innerHTML = `
+      <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div class="l-icon">${I.mic}</div>
+        <div style="min-width:180px">
+          <strong>${escapeHtml(row?.source_name || "Yozuv")}</strong>
+          <div class="sub">${escapeHtml(row?.schedule_name || "")} · ${fmtDuration(row?.duration_seconds)} · ${fmtSize(row?.size_bytes)}</div>
+        </div>
+        <audio id="rec-audio" controls autoplay style="flex:1;min-width:260px"></audio>
+      </div>
+    `;
+    document.getElementById("rec-audio").src = currentAudioUrl;
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+
+async function downloadRecording(id, row, btn) {
+  btn.disabled = true;
+  try {
+    const blob = await fetchRecordingBlob(id);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${row?.source_name || "yozuv"}_${id}.${row?.container || "ogg"}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function retryRecording(id, btn) {
+  btn.disabled = true;
+  try {
+    await api(`/api/admin/audiotap/recordings/${id}/retry`, { method: "POST" });
+    toast("Qayta yuklash boshlandi", "success");
+    // Yuklash fonda ketadi — natijani ko'rish uchun bir lahzadan keyin yangilaymiz.
+    setTimeout(() => renderRecordings(), 2500);
+  } catch (err) {
+    toast(err.message, "error");
+    btn.disabled = false;
   }
 }
 
@@ -3116,11 +3314,13 @@ async function openLessonDetailModal(lessonId) {
     const recsCard = e ? `
       <div class="la-card la-card-rec">
         <div class="la-card-title"><span class="la-ico" style="background:var(--warning-50);color:var(--warning)">${I.star}</span> AI tavsiyalari</div>
+        <div class="la-rec-list">
         ${recs.length ? recs.map((s, i) => `
           <div class="la-rec-card">
             <span class="la-rec-num">${i + 1}</span>
             <div class="la-rec-body"><div class="d">${escapeHtml(s)}</div></div>
           </div>`).join("") : `<div class="la-muted">Tavsiyalar mavjud emas.</div>`}
+        </div>
         <div class="la-rec-foot">${I.info} Tavsiyalar o'qituvchining shaxsiy hisobotida ko'rsatiladi</div>
         ${d.transcript && d.transcript.trim() ? `<button class="btn-ghost btn-sm" id="reeval-btn" style="margin-top:10px">${I.trending} Qayta tahlil qilish</button>` : ""}
       </div>` : "";

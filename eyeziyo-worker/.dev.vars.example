@@ -1,0 +1,16 @@
+# Lokal debug uchun namuna. Nusxa oling: .dev.vars.example -> .dev.vars
+# `.dev.vars` faqat `wrangler dev`da ishlaydi va wrangler.toml [vars]ni bosib o'tadi.
+# Bu fayl git'ga tushmaydi (.gitignore).
+
+# Audiotap serverning LAN manzili (mijozning kompyuteri, bir xil WiFi).
+# Webhook payload'da "http://localhost/api/..." keladi — origin shu manzilga
+# almashtiriladi, shunda lokal Worker audioni yuklab olishi mumkin.
+AUDIOTAP_BASE_URL = "http://192.168.100.XX/api"
+
+# Audiotap webhook target'ida ko'rsatilgan secret bilan bir xil bo'lishi kerak.
+# Bo'sh qoldirilsa imzo tekshirilmaydi (debug uchun qulay).
+AUDIOTAP_WEBHOOK_SECRET = ""
+
+# Lokal AI/auth testlari uchun (ixtiyoriy)
+JWT_SECRET = "local-dev-secret-change-me"
+GEMINI_API_KEY = ""

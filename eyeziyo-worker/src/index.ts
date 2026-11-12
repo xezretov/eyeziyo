@@ -49,6 +49,7 @@ import {
 } from "./admin-eval";
 import { handleAiAsk, handleAiTts, handleAiStt } from "./ai-assistant";
 import { hemisConfigured, ssoConfigured, HemisError } from "./hemis-client";
+import { handleAudiotapWebhook, handleAudiotapList, handleAudiotapAudio, handleAudiotapRetry } from "./audiotap";
 import { runSync, SyncScope } from "./hemis-sync";
 import { resolveSsoUser } from "./hemis-sso";
 
@@ -64,6 +65,10 @@ interface Env {
   HEMIS_BASE_URL?: string;
   HEMIS_API_TOKEN?: string;
   HEMIS_SSO_SECRET?: string;
+  // Audiotap integration (optional). Audio artifacts are stored in R2.
+  AUDIO_BUCKET?: R2Bucket;
+  AUDIOTAP_BASE_URL?: string;
+  AUDIOTAP_WEBHOOK_SECRET?: string;
 }
 
 // ── CORS ──
@@ -200,7 +205,7 @@ async function getEffectiveGroups(user: any, env: Env): Promise<string[]> {
 }
 
 // ── Route handler ──
-async function handleRequest(request: Request, env: Env): Promise<Response> {
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
@@ -253,6 +258,30 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
           course_type: user.course_type,
           institution_id: user.institution_id || null,
         });
+      }
+
+      // ── Audiotap webhook (machine-to-machine; HMAC-verified, no user auth) ──
+      if (path === "/api/webhooks/audiotap" && method === "POST") {
+        return handleAudiotapWebhook(request, env, ctx);
+      }
+
+      // ── Admin: audiotap recordings ──
+      if (path === "/api/admin/audiotap/recordings" && method === "GET") {
+        const [, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        return handleAudiotapList(request, env);
+      }
+      const audiotapAudioMatch = path.match(/^\/api\/admin\/audiotap\/recordings\/(\d+)\/audio$/);
+      if (audiotapAudioMatch && method === "GET") {
+        const [, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        return handleAudiotapAudio(env, parseInt(audiotapAudioMatch[1]));
+      }
+      const audiotapRetryMatch = path.match(/^\/api\/admin\/audiotap\/recordings\/(\d+)\/retry$/);
+      if (audiotapRetryMatch && method === "POST") {
+        const [, aerr] = await requireAdmin(request, env);
+        if (aerr) return aerr;
+        return handleAudiotapRetry(env, ctx, parseInt(audiotapRetryMatch[1]));
       }
 
       // ── Lessons ──
@@ -591,8 +620,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       if (path === "/api/admin/hemis/sync" && method === "POST") {
         const [admin, aerr] = await requireAdmin(request, env);
         if (aerr) return aerr;
-        // Sync is expensive (many HEMIS subrequests + D1 writes) — keep it slow.
-        const rl = await checkRateLimit(env.DB, `hemis-sync:${admin.id}`, 30, 60);
+        // Paginated scopes (students ~110 pages, assignments ~180 pages) are
+        // driven one page per request by hemis.html at ~1 req/s, so the cap
+        // must comfortably exceed that. Abuse protection is the admin-only auth
+        // plus HEMIS's own upstream rate limit.
+        const rl = await checkRateLimit(env.DB, `hemis-sync:${admin.id}`, 300, 60);
         if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
         return handleHemisSync(request, admin, env);
       }
@@ -639,8 +671,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const response = await handleRequest(request, env);
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const response = await handleRequest(request, env, ctx);
     // WebSocket upgrade responses (101) cannot be wrapped — they carry the
     // webSocket pair and any rebuilt Response would lose it.
     if (response.status === 101) return response;

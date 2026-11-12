@@ -14,6 +14,9 @@ build/
 # Local config
 local.properties
 
+# Wrangler local dev secrets (never commit)
+.dev.vars
+
 # Python
 .venv*/
 .pip-cache/
@@ -26,6 +29,9 @@ aisha-ct2/
 
 # Large audio files
 *.flac
+
+# Audiotap debug receiver output (tools/audiotap-debug.mjs)
+audiotap-out/
 
 # Playwright MCP snapshots
 .playwright-mcp/

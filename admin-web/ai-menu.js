@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Eyeziyo AI — ovozli tahlilchi (/ai-menu)
+   EduLensAI — ovozli tahlilchi (/ai-menu)
    Savol (matn/ovoz) → worker AI endpointlari → javob + TTS
    ═══════════════════════════════════════════════════════ */
 
@@ -35,7 +35,7 @@ const teleRight = $("#teleRight");
 // ═══ Boot sekvensiyasi ═══
 (function boot() {
   const lines = [
-    { t: "EYEZIYO AI CORE v2.0", d: 100 },
+    { t: "EDULENSAI CORE v2.0", d: 100 },
     { t: "<span>Neyron interfeys...</span> <b>ULANDI</b>", d: 420 },
     { t: "<span>Analitika bazasi...</span> <b>SINXRON</b>", d: 780 },
     { t: "<span>Ovoz moduli (TTS/STT)...</span> <b>TAYYOR</b>", d: 1140 },
@@ -124,7 +124,7 @@ function addUserMsg(text) {
 function addTyping() {
   const div = document.createElement("div");
   div.className = "msg ai";
-  div.innerHTML = `<div class="ai-tag">Eyeziyo AI</div><div class="typing"><i></i><i></i><i></i></div>`;
+  div.innerHTML = `<div class="ai-tag">EduLensAI</div><div class="typing"><i></i><i></i><i></i></div>`;
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
   return div;
@@ -251,7 +251,7 @@ async function ask(question) {
     if (history.length > 12) history = history.slice(-12);
 
     // Typing indikatorini javob bilan almashtirish
-    typingMsg.innerHTML = `<div class="ai-tag">Eyeziyo AI <span class="lat">· ${(lastLatency / 1000).toFixed(1)}s</span></div>`;
+    typingMsg.innerHTML = `<div class="ai-tag">EduLensAI <span class="lat">· ${(lastLatency / 1000).toFixed(1)}s</span></div>`;
     const textEl = document.createElement("div");
     typingMsg.appendChild(textEl);
     setOrbState(null, "");

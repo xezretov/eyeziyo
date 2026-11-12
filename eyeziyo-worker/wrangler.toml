@@ -5,14 +5,23 @@ compatibility_date = "2025-01-01"
 [vars]
 GEMINI_MODEL = "gemini-flash-lite-latest"
 # HEMIS integration base URL (no trailing slash). Per-university HEMIS instance.
-HEMIS_BASE_URL = "https://student.atmu.uz/rest"
+HEMIS_BASE_URL = "https://student.ipu-edu.uz/rest"
+# Audiotap server public base URL (no trailing slash). Webhook payloads carry
+# "http://localhost/api/..." download URLs — their origin is rewritten to this.
+# TODO: mijozdan audiotap serverning tashqi (public) manzilini olib yangilang.
+AUDIOTAP_BASE_URL = "http://localhost/api"
 
 # Secrets — set via `wrangler secret put <NAME>`
 #   wrangler secret put GEMINI_API_KEY
 #   wrangler secret put JWT_SECRET   (use a long random value, e.g. `openssl rand -hex 32`)
 #   wrangler secret put HEMIS_API_TOKEN   (HEMIS Backend API bearer token — /v1/data/*)
 #   wrangler secret put HEMIS_SSO_SECRET  (HEMIS SSO "maxfiy kalit" — /v1/sso/verify)
+#   wrangler secret put AUDIOTAP_WEBHOOK_SECRET  (audiotap webhook target'dagi secret bilan bir xil)
 # Do NOT put secrets in this file — wrangler.toml may be committed to git.
+
+[[r2_buckets]]
+binding = "AUDIO_BUCKET"
+bucket_name = "eyeziyo-audio"
 
 [[d1_databases]]
 binding = "DB"

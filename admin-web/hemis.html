@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>Eyeziyo — HEMIS sinxron</title>
+  <title>EduLensAI — HEMIS sinxron</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
@@ -39,7 +39,7 @@
       <img src="/logo_eyeziyo.png" alt="">
       <h1>HEMIS sinxron</h1>
     </div>
-    <div class="hs-sub">Universitet strukturasi, o'qituvchilar, talabalar va tayinlashlarni HEMIS'dan olib keladi (bir tomonlama: HEMIS → eyeziyo). · <a class="hs-back" href="/">← Admin panel</a></div>
+    <div class="hs-sub">Universitet strukturasi, o'qituvchilar, talabalar va tayinlashlarni HEMIS'dan olib keladi (bir tomonlama: HEMIS → EduLensAI). · <a class="hs-back" href="/">← Admin panel</a></div>
 
     <!-- LOGIN -->
     <div id="login-card" class="hs-card hs-hidden">
@@ -110,15 +110,44 @@
       });
       if (r.status === 401) { localStorage.removeItem("eyeziyo_token"); showLogin(); throw new Error("Sessiya tugagan, qayta kiring"); }
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d.detail || ("HTTP " + r.status));
+      if (!r.ok) {
+        const e = new Error(d.detail || ("HTTP " + r.status));
+        e.status = r.status;
+        e.retryAfter = parseInt(r.headers.get("Retry-After") || "0", 10) || 0;
+        throw e;
+      }
       return d;
     }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // One sync step. On 429 (rate limit) wait and retry the same page instead
+    // of aborting the whole run.
+    async function syncCall(scope, page) {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await api("/api/admin/hemis/sync", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(page ? { scope, page } : { scope }),
+          });
+        } catch (ex) {
+          if (ex.status !== 429 || attempt >= 30) throw ex;
+          const wait = Math.max(5, Math.min(60, ex.retryAfter || 10));
+          log(`  limit: ${wait} soniya kutilmoqda…`);
+          await sleep(wait * 1000);
+        }
+      }
+    }
+
+    let lastStatus = null;
+    const PAGE_SIZE = 200;
 
     async function loadStatus() {
       const box = $("hs-status"), warn = $("hs-status-warn");
       warn.innerHTML = "";
       try {
         const s = await api("/api/admin/hemis/status");
+        lastStatus = s;
         const chips = [];
         chips.push(`<span class="hs-chip ${s.configured ? "ok" : "bad"}">API token: <strong>${s.configured ? "bor" : "yo'q"}</strong></span>`);
         chips.push(`<span class="hs-chip ${s.sso_configured ? "ok" : "bad"}">SSO secret: <strong>${s.sso_configured ? "bor" : "yo'q"}</strong></span>`);
@@ -146,21 +175,21 @@
       try {
         if (scope === "structure" || scope === "courses" || scope === "auditoriums") {
           log(`${scope} sinxroni boshlandi…`);
-          const d = await api("/api/admin/hemis/sync", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ scope }),
-          });
+          const d = await syncCall(scope);
           for (const r of d.results) log(`  ${r.entity}: jami ${r.total}, yangi ${r.inserted}, yangilandi ${r.updated}`);
           log(`${scope} tayyor.`);
         } else {
-          // Paginated scopes — loop until done.
+          // Paginated scopes — loop until done. If a previous run stopped
+          // midway (last_page recorded but not all pages processed), resume.
           log(`${scope} sinxroni boshlandi…`);
           let page = 1, done = false, totalNew = 0;
+          const st = ((lastStatus && lastStatus.sync_state) || []).find(r => r.entity === scope);
+          if (st && st.last_page > 0 && st.last_page * PAGE_SIZE < (st.total_count || 0)) {
+            page = st.last_page + 1;
+            log(`  oldingi urinish ${st.last_page}-sahifada to'xtagan, ${page}-sahifadan davom etiladi`);
+          }
           while (!done) {
-            const d = await api("/api/admin/hemis/sync", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ scope, page }),
-            });
+            const d = await syncCall(scope, page);
             const r = d.results[0];
             totalNew += r.inserted;
             log(`  sahifa ${r.page}/${r.page_count} — yangi ${r.inserted}, yangilandi ${r.updated} (jami ${r.total})`);
